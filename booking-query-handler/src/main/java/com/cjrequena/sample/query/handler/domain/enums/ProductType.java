@@ -1,0 +1,34 @@
+package com.cjrequena.sample.query.handler.domain.enums;
+
+import com.cjrequena.sample.query.handler.domain.exception.InvalidArgumentException;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter
+public enum ProductType {
+
+  TRANSFER("Transfer");
+
+  private final String type;
+
+  @JsonCreator
+  public static ProductType from(String type) {
+    for (ProductType bookingOrderStatus : ProductType.values()) {
+      if (bookingOrderStatus.type.equals(type)) {
+        return bookingOrderStatus;
+      }
+    }
+    throw new InvalidArgumentException("Unexpected type '" + type + "'");
+  }
+
+  @JsonValue
+  @Override
+  public String toString() {
+    return String.valueOf(type);
+  }
+
+}

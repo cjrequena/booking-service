@@ -1,0 +1,244 @@
+services:
+  # -------------------------------------------------------
+  # Postgres
+  # -------------------------------------------------------
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres-data:/data/postgres
+      - $PWD/provision/V1.0__eventstore_schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - local-network
+    restart: unless-stopped
+  # -------------------------------------------------------
+  # MongoDB
+  # -------------------------------------------------------
+  mongo:
+    image: mongo:${MONGO_VERSION}
+    container_name: mongo
+    hostname: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-root}
+    ports:
+      - "27017:27017"
+    networks:
+      - local-network
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+  # -------------------------------------------------------
+  # Mongo express
+  # -------------------------------------------------------
+  mongo-express:
+    image: mongo-express:${MONGO_EXPRESS_VERSION}
+    container_name: mongo-express
+    hostname: mongo-express
+    restart: always
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-root}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-root}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD:-root}
+    ports:
+      - "8081:8081"
+    networks:
+      - local-network
+    depends_on:
+      - mongo
+    links:
+      - mongo
+  # -------------------------------------------------------
+  # Redis
+  # -------------------------------------------------------
+  redis:
+    image: redis:alpine
+    container_name: redis-local
+    hostname: redis-local
+    command: [
+      "redis-server",
+      "--appendonly", "yes",
+      "--appendfsync", "everysec",
+      "--maxmemory", "256mb",
+      "--maxmemory-policy", "allkeys-lru",
+      "--loglevel", "notice"
+    ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    environment:
+      REDIS_REPLICATION_MODE: master
+    networks:
+      - local-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  # -------------------------------------------------------
+  # Kafka
+  # -------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:${KAFKA_VERSION}
+    hostname: kafka
+    container_name: kafka
+    user: root
+    networks:
+      local-network:
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      KAFKA_CONFLUENT_METRICS_ENABLE: 'true'
+      KAFKA_CONFLUENT_SUPPORT_CUSTOMER_ID: anonymous
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      CLUSTER_ID: ${CLUSTER_ID}
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    command: >
+      bash -c "
+      mkdir -p /var/lib/kafka/data &&
+      chown -R appuser:appuser /var/lib/kafka/data &&
+      /etc/confluent/docker/run
+      "
+  # -------------------------------------------------------
+  # Kafkabat
+  # -------------------------------------------------------
+  kafbat-ui:
+    image: ghcr.io/kafbat/kafka-ui:${KAFBAT_UI_VERSION}
+    container_name: kafbat-ui
+    hostname: kafbat-ui
+    depends_on:
+      - kafka
+    networks:
+      local-network:
+        ipv4_address: 171.28.1.9
+    ports:
+      - "18080:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      # Define your Kafka cluster (this matches your setup)
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      # Optional: Connect Schema Registry for Avro/Protobuf decoding
+      # KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      # Optional: enable basic auth (disabled by default)
+      # AUTH_TYPE: 'LOGIN_FORM'
+      # SPRING_SECURITY_USER_NAME: admin
+      # SPRING_SECURITY_USER_PASSWORD: admin
+    volumes:
+      - kafbat-data:/etc/kafkaui
+      #- .provision/kafbat-dynamic-config.yaml:/etc/kafkaui/dynamic_config.yaml # Optional: store UI config for persistence
+  # -------------------------------------------------------
+  # PostgreSQL - SonarQube Database
+  # -------------------------------------------------------
+  sonarqube-db:
+    image: postgres:15
+    container_name: sonarqube-db
+    hostname: sonarqube-db
+    environment:
+      POSTGRES_USER: ${SONAR_DB_USER:-sonar}
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      POSTGRES_DB: ${SONAR_DB_NAME:-sonarqube}
+      PGDATA: /data/postgres
+    volumes:
+      - sonarqube-db-data:/data/postgres
+    networks:
+      - local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SONAR_DB_USER:-sonar} -d ${SONAR_DB_NAME:-sonarqube}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  # -------------------------------------------------------
+  # SonarQube
+  # -------------------------------------------------------
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube-local
+    hostname: sonarqube-local
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/${SONAR_DB_NAME:-sonarqube}
+      SONAR_JDBC_USERNAME: ${SONAR_DB_USER:-sonar}
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true   # Disable for local dev only
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    ports:
+      - "9000:9000"
+    networks:
+      - local-network
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s   # SonarQube takes a while to start
+# -------------------------------------------------------
+# Networks
+# -------------------------------------------------------
+networks:
+  local-network:
+    name: sample-network.local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 171.28.0.0/16
+# -------------------------------------------------------
+# Volumes
+# -------------------------------------------------------
+volumes:
+  postgres-data:
+  mongo-data:
+  mongo-config:
+  kafka-data:
+  kafbat-data:
+  sonarqube-db-data:
+  sonarqube-data:
+  sonarqube-extensions:
+  sonarqube-logs:
+  redis-data:
