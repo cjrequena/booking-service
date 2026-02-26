@@ -1,7 +1,9 @@
 package com.cjrequena.sample.command.handler.domain.mapper;
 
 import com.cjrequena.sample.command.handler.domain.exception.MapperException;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
+import com.cjrequena.sample.command.handler.domain.model.vo.BookingCreatedEventDataVO;
 import com.cjrequena.sample.command.handler.domain.model.vo.BookingPlacedEventDataVO;
 import com.cjrequena.sample.command.handler.shared.common.util.JsonUtil;
 import com.cjrequena.sample.es.core.domain.model.event.Event;
@@ -25,6 +27,9 @@ public interface EventMapper {
   // Event Domains  <-->  Event Entities
   // ================================================================
 
+  // ================================================================
+  // BookingPlacedEvent
+  // ================================================================
   @Mapping(target = "dataContentType", constant = "application/json")
   @Mapping(target = "data", ignore = true)
   @Mapping(target = "eventId", ignore = true)
@@ -47,7 +52,7 @@ public interface EventMapper {
     }
   }
 
-  @Mapping(target = "data", expression = "java(deserializeData(entity.getData()))")
+  @Mapping(target = "data", expression = "java(deserializeDataToBookingPlacedEventDataVO(entity.getData()))")
   BookingPlacedEvent eventEntityToBookingPlacedEvent(EventEntity entity);
 
   /**
@@ -57,7 +62,7 @@ public interface EventMapper {
    * @param json the JSON string to deserialize
    * @return the deserialized data value object
    */
-  default BookingPlacedEventDataVO deserializeData(String json) {
+  default BookingPlacedEventDataVO deserializeDataToBookingPlacedEventDataVO(String json) {
     try {
       return JsonUtil.jsonStringToObject(json, BookingPlacedEventDataVO.class);
     } catch (Exception e) {
@@ -65,25 +70,71 @@ public interface EventMapper {
     }
   }
 
+  // ================================================================
+  // BookingCreatedEvent
+  // ================================================================
+  @Mapping(target = "dataContentType", constant = "application/json")
+  @Mapping(target = "data", ignore = true)
+  @Mapping(target = "eventId", ignore = true)
+  @Mapping(target = "extension", ignore = true)
+  @Mapping(target = "offsetId", ignore = true)
+  @Mapping(target = "offsetTxId", ignore = true)
+  @Mapping(target = "time", ignore = true)
+  EventEntity bookingCreatedEventToEventEntity(BookingCreatedEvent event);
+
+  /** Serializes {@link BookingCreatedEvent#getData()} to JSON and sets it on the entity. */
+  @AfterMapping
+  default void populateEntityFields(BookingCreatedEvent event, @MappingTarget EventEntity entity) {
+    if (event == null) {
+      return;
+    }
+    try {
+      entity.setData(JsonUtil.objectToJsonString(event.getData()));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to serialize BookingCreatedEvent to JSON", e);
+    }
+  }
+
+  @Mapping(target = "data", expression = "java(deserializeDataToBookingCreatedEventDataVO(entity.getData()))")
+  BookingCreatedEvent eventEntityToBookingCreatedEvent(EventEntity entity);
+
+  /**
+   * Deserializes the raw JSON string stored in {@link EventEntity#getData()} into a typed
+   * {@link BookingCreatedEventDataVO}.
+   *
+   * @param json the JSON string to deserialize
+   * @return the deserialized data value object
+   */
+  default BookingCreatedEventDataVO deserializeDataToBookingCreatedEventDataVO(String json) {
+    try {
+      return JsonUtil.jsonStringToObject(json, BookingCreatedEventDataVO.class);
+    } catch (Exception e) {
+      throw new MapperException("Failed to deserialize EventEntity data to BookingCreatedEventDataVO", e);
+    }
+  }
+
+  // ================================================================
   // New method to map a List of EventEntity to a List of Event
+  // ================================================================
   default List<Event> toEventList(List<EventEntity> eventEntities) {
     return eventEntities
       .stream()
       .map(this::toEvent)  // Call the helper method for individual mapping
       .collect(Collectors.toList());
   }
-
+  // ================================================================
   // Helper method to map a single EventEntity to an Event (AccountCreatedEvent, AccountCreditedEvent, etc.)
-    default Event toEvent(EventEntity eventEntity) {
-      // Assuming EventEntity has a type field or some kind of discriminator
-      switch (eventEntity.getEventType()) {
-        case "BookingPlacedEvent":
-          return eventEntityToBookingPlacedEvent(eventEntity);
-        default:
-          String errorMessage = String.format("Error mapping to event, unknown event type: %s", eventEntity.getEventType());
-          log.error(errorMessage);
-          throw new MapperException(errorMessage);
-      }
+  // ================================================================
+  default Event toEvent(EventEntity eventEntity) {
+    // Assuming EventEntity has a type field or some kind of discriminator
+    switch (eventEntity.getEventType()) {
+      case "BookingPlacedEvent":
+        return eventEntityToBookingPlacedEvent(eventEntity);
+      default:
+        String errorMessage = String.format("Error mapping to event, unknown event type: %s", eventEntity.getEventType());
+        log.error(errorMessage);
+        throw new MapperException(errorMessage);
     }
+  }
 
 }
