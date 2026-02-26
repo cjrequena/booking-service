@@ -2,6 +2,11 @@ package com.cjrequena.sample.command.handler.domain.model.vo;
 
 import com.cjrequena.sample.command.handler.domain.model.enums.ProductStatus;
 import com.cjrequena.sample.command.handler.domain.model.enums.ProductType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.extern.jackson.Jacksonized;
@@ -22,6 +27,17 @@ import java.util.UUID;
  */
 @Builder
 @Jacksonized
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonPropertyOrder({
+  "product_id",
+  "search_id",
+  "search_created_at",
+  "product_type",
+  "status",
+  "paxes_ids",
+})
 public record ProductMetadataVO(
 
   @NotNull(message = "Product ID is required")
@@ -40,11 +56,7 @@ public record ProductMetadataVO(
   ProductStatus status,
 
   @NotNull(message = "Paxes IDs are required")
-  List<UUID> paxesIds,
-
-  @NotNull(message = "Hash is required")
-  String hash
-
+  List<UUID> paxesIds
 ) implements Serializable {
 
   /**
@@ -61,8 +73,7 @@ public record ProductMetadataVO(
       searchCreatedAt,
       productType,
       newStatus,
-      paxesIds,
-      hash
+      paxesIds
     );
   }
 

@@ -1,6 +1,10 @@
 package com.cjrequena.sample.command.handler.domain.model.vo.transfer;
 
 import com.cjrequena.sample.command.handler.domain.model.enums.TransferType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -21,6 +25,9 @@ import java.util.UUID;
  */
 @Builder
 @Jacksonized
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record TripVO(
 
   @NotNull(message = "Trip ID is required")

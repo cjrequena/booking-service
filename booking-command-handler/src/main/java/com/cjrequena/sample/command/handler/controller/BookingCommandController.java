@@ -1,5 +1,6 @@
 package com.cjrequena.sample.command.handler.controller;
 
+import com.cjrequena.sample.command.handler.controller.dto.CommandResponseDTO;
 import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.exception.BadRequestException;
 import com.cjrequena.sample.command.handler.controller.exception.ConflictException;
@@ -7,7 +8,7 @@ import com.cjrequena.sample.command.handler.controller.exception.NotImplementedE
 import com.cjrequena.sample.command.handler.domain.exception.CommandHandlerNotFoundException;
 import com.cjrequena.sample.command.handler.domain.exception.PaxPriceException;
 import com.cjrequena.sample.command.handler.domain.mapper.CommandMapper;
-import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
+import com.cjrequena.sample.command.handler.domain.model.aggregate.Booking;
 import com.cjrequena.sample.command.handler.service.command.CommandBusService;
 import com.cjrequena.sample.command.handler.shared.common.Constant;
 import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyException;
@@ -47,20 +48,25 @@ public class BookingCommandController {
     path = "/place",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<String>> place(@Valid @RequestBody PlaceBookingCommandDTO dto, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> place(@Valid @RequestBody PlaceBookingCommandDTO dto, ServerHttpRequest request) {
     try {
       Command command = commandMapper.toCommand(dto);
-      this.commandBusService.handle(command);
+      Booking booking = (Booking)this.commandBusService.handle(command);
+      CommandResponseDTO responseDTO = CommandResponseDTO
+        .builder()
+        .bookingId(booking.getBookingId())
+        .status(booking.getStatus())
+        .build();
 
       HttpHeaders headers = new HttpHeaders();
       headers.set(CACHE_CONTROL, "no store, private, max-age=0");
-      headers.set("booking_id", command.getAggregateId().toString());
+      headers.set("Booking-Id", command.getAggregateId().toString());
 
       return Mono.just(
         ResponseEntity
           .status(HttpStatus.CREATED)
           .headers(headers)
-          .body(String.format("{ \"booking_id\": \"%s\",\"status\": \"%s\"}", command.getAggregateId(), BookingStatus.PLACED))
+          .body(responseDTO)
       );
 
     } catch (OptimisticConcurrencyException ex) {

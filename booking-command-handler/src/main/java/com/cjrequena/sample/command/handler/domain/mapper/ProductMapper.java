@@ -64,7 +64,6 @@ public interface ProductMapper {
   @Mapping(source = "metadata.productType", target = "productType")
   @Mapping(source = "metadata.status", target = "status")
   @Mapping(source = "metadata.paxesIds", target = "paxesIds")
-  @Mapping(source = "metadata.hash", target = "hash")
   TransferEntity toTransfer(TransferVO transferVO);
 
   /**

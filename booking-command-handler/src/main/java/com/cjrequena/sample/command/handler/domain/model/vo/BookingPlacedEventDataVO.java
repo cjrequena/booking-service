@@ -1,6 +1,10 @@
 package com.cjrequena.sample.command.handler.domain.model.vo;
 
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -34,6 +38,9 @@ import java.util.UUID;
  */
 @Builder
 @Jacksonized
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record BookingPlacedEventDataVO(
 
   @NotNull(message = "Booking ID is required")

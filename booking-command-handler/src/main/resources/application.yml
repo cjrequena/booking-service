@@ -43,6 +43,8 @@ management.info.env.enabled: true # Whether to enable environment info.
 management.info.git.enabled: true # Whether to enable git info.
 management.info.git.mode: full # Mode to use to expose git information.
 
+spring.web.resources.add-mappings: true # To fix favicon not found issue.
+
 # ----------------------------------------
 # EventStore DataSource Configuration
 # ----------------------------------------
@@ -172,3 +174,29 @@ logging.pattern:
       TRACE=cyan
     }"
   file: "%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n"
+
+spring.jackson:
+  property-naming-strategy: SNAKE_CASE
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+    display-request-duration: true
+    doc-expansion: none
+  packages-to-scan: com.cjrequena.sample.command.handler.controller
+  paths-to-match: /command-handler/api/**
+  show-actuator: false
+  override-with-generic-response: false
+  writer-with-default-pretty-printer: true
+  use-fqn: true
+  cache:
+    disabled: true
+  model-and-view-allowed: true

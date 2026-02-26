@@ -21,23 +21,32 @@ public class CommandBusService {
   private final List<CommandHandler<? extends Command>> commandHandlers;
   private final List<ProjectionHandler> projectionHandlers;
 
-  public void handle(Command command) {
-    commandHandlers.stream()
+  public Aggregate handle(Command command) {
+
+    return commandHandlers
+      .stream()
       .filter(commandHandler -> commandHandler.getCommandType() == command.getClass())
       .findFirst()
-      .ifPresentOrElse(commandHandler -> {
-        log.info("Handling command {} with {}", command.getClass().getSimpleName(), commandHandler.getClass().getSimpleName());
+      .map(commandHandler -> {
+        log.info(
+          "Handling command {} with {}",
+          command.getClass().getSimpleName(),
+          commandHandler.getClass().getSimpleName()
+        );
 
         final Aggregate aggregate = commandHandler.handle(command);
 
         // Save or Update the projection database
-        projectionHandlers.stream()
+        projectionHandlers
+          .stream()
           .filter(handler -> handler.getAggregateType().getType().equals(aggregate.getAggregateType()))
           .forEach(handler -> handler.handle(aggregate));
 
-      }, () -> {
+        return aggregate; // ✅ return here
+      })
+      .orElseThrow(() -> {
         log.info("No specialized handle found with {}", command.getClass().getSimpleName());
-        throw new CommandHandlerNotFoundException("No specialized handle found for command: " + command.getClass().getSimpleName());
+        return new CommandHandlerNotFoundException("No specialized handle found for command: " + command.getClass().getSimpleName());
       });
   }
 }

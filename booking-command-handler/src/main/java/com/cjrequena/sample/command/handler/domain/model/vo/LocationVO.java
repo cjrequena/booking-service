@@ -1,5 +1,9 @@
 package com.cjrequena.sample.command.handler.domain.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.Builder;
@@ -18,6 +22,9 @@ import java.io.Serializable;
  */
 @Builder
 @Jacksonized
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record LocationVO(
 
   @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
