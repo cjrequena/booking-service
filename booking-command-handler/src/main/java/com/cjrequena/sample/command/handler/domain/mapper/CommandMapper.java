@@ -1,8 +1,10 @@
 package com.cjrequena.sample.command.handler.domain.mapper;
 
+import com.cjrequena.sample.command.handler.controller.dto.CancelBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.ConfirmBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.CreateBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
+import com.cjrequena.sample.command.handler.domain.model.command.CancelBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
@@ -63,6 +65,12 @@ public interface CommandMapper {
 
   default ConfirmBookingCommand toCommand(ConfirmBookingCommandDTO dto) {
     return new ConfirmBookingCommand(
+      dto.bookingId()
+    );
+  }
+
+  default CancelBookingCommand toCommand(CancelBookingCommandDTO dto) {
+    return new CancelBookingCommand(
       dto.bookingId()
     );
   }

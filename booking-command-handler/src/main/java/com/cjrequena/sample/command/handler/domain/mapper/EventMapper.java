@@ -1,9 +1,11 @@
 package com.cjrequena.sample.command.handler.domain.mapper;
 
 import com.cjrequena.sample.command.handler.domain.exception.MapperException;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingCancelledEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
+import com.cjrequena.sample.command.handler.domain.model.vo.BookingCancelledEventDataVO;
 import com.cjrequena.sample.command.handler.domain.model.vo.BookingConfirmedEventDataVO;
 import com.cjrequena.sample.command.handler.domain.model.vo.BookingCreatedEventDataVO;
 import com.cjrequena.sample.command.handler.domain.model.vo.BookingPlacedEventDataVO;
@@ -159,6 +161,49 @@ public interface EventMapper {
   }
 
   // ================================================================
+  // BookingCancelledEvent
+  // ================================================================
+  @Mapping(target = "dataContentType", constant = "application/json")
+  @Mapping(target = "data", ignore = true)
+  @Mapping(target = "eventId", ignore = true)
+  @Mapping(target = "extension", ignore = true)
+  @Mapping(target = "offsetId", ignore = true)
+  @Mapping(target = "offsetTxId", ignore = true)
+  @Mapping(target = "time", ignore = true)
+  EventEntity bookingCancelledEventToEventEntity(BookingCancelledEvent event);
+
+  /** Serializes {@link BookingCancelledEvent#getData()} to JSON and sets it on the entity. */
+  @AfterMapping
+  default void populateEntityFields(BookingCancelledEvent event, @MappingTarget EventEntity entity) {
+    if (event == null) {
+      return;
+    }
+    try {
+      entity.setData(JsonUtil.objectToJsonString(event.getData()));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to serialize BookingCancelledEvent to JSON", e);
+    }
+  }
+
+  @Mapping(target = "data", expression = "java(deserializeDataToBookingCancelledEventDataVO(entity.getData()))")
+  BookingCancelledEvent eventEntityToBookingCancelledEvent(EventEntity entity);
+
+  /**
+   * Deserializes the raw JSON string stored in {@link EventEntity#getData()} into a typed
+   * {@link BookingCancelledEventDataVO}.
+   *
+   * @param json the JSON string to deserialize
+   * @return the deserialized data value object
+   */
+  default BookingCancelledEventDataVO deserializeDataToBookingCancelledEventDataVO(String json) {
+    try {
+      return JsonUtil.jsonStringToObject(json, BookingCancelledEventDataVO.class);
+    } catch (Exception e) {
+      throw new MapperException("Failed to deserialize EventEntity data to BookingCancelledEventDataVO", e);
+    }
+  }
+
+  // ================================================================
   // New method to map a List of EventEntity to a List of Event
   // ================================================================
   default List<Event> toEventList(List<EventEntity> eventEntities) {
@@ -179,6 +224,8 @@ public interface EventMapper {
         return eventEntityToBookingCreatedEvent(eventEntity);
       case "BookingConfirmedEvent":
         return eventEntityToBookingConfirmedEvent(eventEntity);
+      case "BookingCancelledEvent":
+        return eventEntityToBookingCancelledEvent(eventEntity);
       default:
         String errorMessage = String.format("Error mapping to event, unknown event type: %s", eventEntity.getEventType());
         log.error(errorMessage);

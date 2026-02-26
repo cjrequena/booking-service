@@ -1,9 +1,6 @@
 package com.cjrequena.sample.command.handler.controller;
 
-import com.cjrequena.sample.command.handler.controller.dto.CommandResponseDTO;
-import com.cjrequena.sample.command.handler.controller.dto.ConfirmBookingCommandDTO;
-import com.cjrequena.sample.command.handler.controller.dto.CreateBookingCommandDTO;
-import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
+import com.cjrequena.sample.command.handler.controller.dto.*;
 import com.cjrequena.sample.command.handler.controller.exception.BadRequestException;
 import com.cjrequena.sample.command.handler.controller.exception.ConflictException;
 import com.cjrequena.sample.command.handler.controller.exception.NotImplementedException;
@@ -122,6 +119,42 @@ public class BookingCommandController {
   public Mono<ResponseEntity<CommandResponseDTO>> confirm(@PathVariable UUID bookingId, ServerHttpRequest request) {
     try {
       ConfirmBookingCommandDTO dto = ConfirmBookingCommandDTO.builder().bookingId(bookingId).build();
+      Command command = commandMapper.toCommand(dto);
+      Booking booking = (Booking)this.commandBusService.handle(command);
+      CommandResponseDTO responseDTO = CommandResponseDTO
+        .builder()
+        .bookingId(booking.getBookingId())
+        .status(booking.getStatus())
+        .build();
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.set(CACHE_CONTROL, "no store, private, max-age=0");
+      headers.set("Booking-Id", command.getAggregateId().toString());
+
+      return Mono.just(
+        ResponseEntity
+          .status(HttpStatus.OK)
+          .headers(headers)
+          .body(responseDTO)
+      );
+
+    } catch (OptimisticConcurrencyException ex) {
+      throw new ConflictException(ex.getMessage());
+    } catch (CommandHandlerNotFoundException ex) {
+      throw new NotImplementedException(ex.getMessage());
+    } catch (PaxPriceException ex){
+      throw new BadRequestException(ex.getMessage());
+    }
+  }
+
+  @SneakyThrows
+  @PostMapping(
+    path = "/{bookingId}/cancel",
+    produces = {APPLICATION_JSON_VALUE}
+  )
+  public Mono<ResponseEntity<CommandResponseDTO>> cancel(@PathVariable UUID bookingId, ServerHttpRequest request) {
+    try {
+      CancelBookingCommandDTO dto = CancelBookingCommandDTO.builder().bookingId(bookingId).build();
       Command command = commandMapper.toCommand(dto);
       Booking booking = (Booking)this.commandBusService.handle(command);
       CommandResponseDTO responseDTO = CommandResponseDTO

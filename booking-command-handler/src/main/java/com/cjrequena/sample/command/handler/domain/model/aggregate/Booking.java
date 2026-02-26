@@ -1,10 +1,12 @@
 package com.cjrequena.sample.command.handler.domain.model.aggregate;
 
+import com.cjrequena.sample.command.handler.domain.model.command.CancelBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingCancelledEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
@@ -164,6 +166,33 @@ public class Booking extends Aggregate {
   }
 
   public void applyEvent(BookingConfirmedEvent event) {
+    this.status = event.getData().status();
+  }
+
+  //==========================================================
+  // Cancel Booking
+  //==========================================================
+
+  public void applyCommand(CancelBookingCommand command) throws JsonProcessingException {
+    final BookingCancelledEventDataVO data = BookingCancelledEventDataVO
+      .builder()
+      .bookingId(command.getAggregateId())
+      .bookingReference(this.bookingReference)
+      .status(BookingStatus.CANCELLED)
+      .build();
+
+    applyUnconfirmedEvent(BookingCancelledEvent
+      .builder()
+      .eventId(java.util.UUID.randomUUID())
+      .aggregateId(command.getAggregateId())
+      .aggregateVersion(getNextAggregateVersion())
+      .dataContentType(MediaType.APPLICATION_JSON_VALUE)
+      .data(data)
+      .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .build());
+  }
+
+  public void applyEvent(BookingCancelledEvent event) {
     this.status = event.getData().status();
   }
 
