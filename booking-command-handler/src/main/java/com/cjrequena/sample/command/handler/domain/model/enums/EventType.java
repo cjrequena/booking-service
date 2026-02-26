@@ -1,10 +1,7 @@
 package com.cjrequena.sample.command.handler.domain.model.enums;
 
 import com.cjrequena.sample.command.handler.domain.exception.InvalidArgumentException;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingCancelledEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
+import com.cjrequena.sample.command.handler.domain.model.event.*;
 import com.cjrequena.sample.es.core.domain.model.event.Event;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -19,7 +16,9 @@ public enum EventType {
   BOOKING_CREATED_EVENT(BookingCreatedEvent.class, BookingCreatedEvent.class.getSimpleName()),
   BOOKING_PLACED_EVENT(BookingPlacedEvent.class, BookingPlacedEvent.class.getSimpleName()),
   BOOKING_CONFIRMED_EVENT(BookingConfirmedEvent.class, BookingConfirmedEvent.class.getSimpleName()),
-  BOOKING_CANCELLED_EVENT(BookingCancelledEvent.class, BookingCancelledEvent.class.getSimpleName());
+  BOOKING_CANCELLED_EVENT(BookingCancelledEvent.class, BookingCancelledEvent.class.getSimpleName()),
+  BOOKING_COMPLETED_EVENT(BookingCompletedEvent.class, BookingCompletedEvent.class.getSimpleName()),
+  BOOKING_EXPIRED_EVENT(BookingExpiredEvent.class, BookingExpiredEvent.class.getSimpleName());
   // ==
 //  BOOKING_ORDER_PLACED_EVENT(BookingOrderPlacedEvent.class, BookingOrderPlacedEvent.class.getName()),
 //  BOOKING_ORDER_CANCELLED_EVENT(BookingOrderCancelledEvent.class, BookingOrderCancelledEvent.class.getName()),

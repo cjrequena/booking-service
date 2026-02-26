@@ -1,15 +1,9 @@
 package com.cjrequena.sample.command.handler.domain.model.aggregate;
 
-import com.cjrequena.sample.command.handler.domain.model.command.CancelBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
+import com.cjrequena.sample.command.handler.domain.model.command.*;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingCancelledEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
-import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
+import com.cjrequena.sample.command.handler.domain.model.event.*;
 import com.cjrequena.sample.command.handler.domain.model.vo.*;
 import com.cjrequena.sample.command.handler.shared.common.util.JsonUtil;
 import com.cjrequena.sample.es.core.domain.model.aggregate.Aggregate;
@@ -193,6 +187,60 @@ public class Booking extends Aggregate {
   }
 
   public void applyEvent(BookingCancelledEvent event) {
+    this.status = event.getData().status();
+  }
+
+  //==========================================================
+  // Complete Booking
+  //==========================================================
+
+  public void applyCommand(CompleteBookingCommand command) throws JsonProcessingException {
+    final BookingCompletedEventDataVO data = BookingCompletedEventDataVO
+      .builder()
+      .bookingId(command.getAggregateId())
+      .bookingReference(this.bookingReference)
+      .status(BookingStatus.COMPLETED)
+      .build();
+
+    applyUnconfirmedEvent(BookingCompletedEvent
+      .builder()
+      .eventId(java.util.UUID.randomUUID())
+      .aggregateId(command.getAggregateId())
+      .aggregateVersion(getNextAggregateVersion())
+      .dataContentType(MediaType.APPLICATION_JSON_VALUE)
+      .data(data)
+      .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .build());
+  }
+
+  public void applyEvent(BookingCompletedEvent event) {
+    this.status = event.getData().status();
+  }
+
+  //==========================================================
+  // Expire Booking
+  //==========================================================
+
+  public void applyCommand(ExpireBookingCommand command) throws JsonProcessingException {
+    final BookingExpiredEventDataVO data = BookingExpiredEventDataVO
+      .builder()
+      .bookingId(command.getAggregateId())
+      .bookingReference(this.bookingReference)
+      .status(BookingStatus.EXPIRED)
+      .build();
+
+    applyUnconfirmedEvent(BookingExpiredEvent
+      .builder()
+      .eventId(java.util.UUID.randomUUID())
+      .aggregateId(command.getAggregateId())
+      .aggregateVersion(getNextAggregateVersion())
+      .dataContentType(MediaType.APPLICATION_JSON_VALUE)
+      .data(data)
+      .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .build());
+  }
+
+  public void applyEvent(BookingExpiredEvent event) {
     this.status = event.getData().status();
   }
 

@@ -182,4 +182,76 @@ public class BookingCommandController {
       throw new BadRequestException(ex.getMessage());
     }
   }
+
+  @SneakyThrows
+  @PostMapping(
+    path = "/{bookingId}/complete",
+    produces = {APPLICATION_JSON_VALUE}
+  )
+  public Mono<ResponseEntity<CommandResponseDTO>> complete(@PathVariable UUID bookingId, ServerHttpRequest request) {
+    try {
+      CompleteBookingCommandDTO dto = CompleteBookingCommandDTO.builder().bookingId(bookingId).build();
+      Command command = commandMapper.toCommand(dto);
+      Booking booking = (Booking)this.commandBusService.handle(command);
+      CommandResponseDTO responseDTO = CommandResponseDTO
+        .builder()
+        .bookingId(booking.getBookingId())
+        .status(booking.getStatus())
+        .build();
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.set(CACHE_CONTROL, "no store, private, max-age=0");
+      headers.set("Booking-Id", command.getAggregateId().toString());
+
+      return Mono.just(
+        ResponseEntity
+          .status(HttpStatus.OK)
+          .headers(headers)
+          .body(responseDTO)
+      );
+
+    } catch (OptimisticConcurrencyException ex) {
+      throw new ConflictException(ex.getMessage());
+    } catch (CommandHandlerNotFoundException ex) {
+      throw new NotImplementedException(ex.getMessage());
+    } catch (PaxPriceException ex){
+      throw new BadRequestException(ex.getMessage());
+    }
+  }
+
+  @SneakyThrows
+  @PostMapping(
+    path = "/{bookingId}/expire",
+    produces = {APPLICATION_JSON_VALUE}
+  )
+  public Mono<ResponseEntity<CommandResponseDTO>> expire(@PathVariable UUID bookingId, ServerHttpRequest request) {
+    try {
+      ExpireBookingCommandDTO dto = ExpireBookingCommandDTO.builder().bookingId(bookingId).build();
+      Command command = commandMapper.toCommand(dto);
+      Booking booking = (Booking)this.commandBusService.handle(command);
+      CommandResponseDTO responseDTO = CommandResponseDTO
+        .builder()
+        .bookingId(booking.getBookingId())
+        .status(booking.getStatus())
+        .build();
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.set(CACHE_CONTROL, "no store, private, max-age=0");
+      headers.set("Booking-Id", command.getAggregateId().toString());
+
+      return Mono.just(
+        ResponseEntity
+          .status(HttpStatus.OK)
+          .headers(headers)
+          .body(responseDTO)
+      );
+
+    } catch (OptimisticConcurrencyException ex) {
+      throw new ConflictException(ex.getMessage());
+    } catch (CommandHandlerNotFoundException ex) {
+      throw new NotImplementedException(ex.getMessage());
+    } catch (PaxPriceException ex){
+      throw new BadRequestException(ex.getMessage());
+    }
+  }
 }

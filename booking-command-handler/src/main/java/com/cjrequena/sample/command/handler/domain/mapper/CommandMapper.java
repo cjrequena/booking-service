@@ -1,13 +1,7 @@
 package com.cjrequena.sample.command.handler.domain.mapper;
 
-import com.cjrequena.sample.command.handler.controller.dto.CancelBookingCommandDTO;
-import com.cjrequena.sample.command.handler.controller.dto.ConfirmBookingCommandDTO;
-import com.cjrequena.sample.command.handler.controller.dto.CreateBookingCommandDTO;
-import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
-import com.cjrequena.sample.command.handler.domain.model.command.CancelBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
-import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
+import com.cjrequena.sample.command.handler.controller.dto.*;
+import com.cjrequena.sample.command.handler.domain.model.command.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValueCheckStrategy;
 
@@ -71,6 +65,18 @@ public interface CommandMapper {
 
   default CancelBookingCommand toCommand(CancelBookingCommandDTO dto) {
     return new CancelBookingCommand(
+      dto.bookingId()
+    );
+  }
+
+  default CompleteBookingCommand toCommand(CompleteBookingCommandDTO dto) {
+    return new CompleteBookingCommand(
+      dto.bookingId()
+    );
+  }
+
+  default ExpireBookingCommand toCommand(ExpireBookingCommandDTO dto) {
+    return new ExpireBookingCommand(
       dto.bookingId()
     );
   }
