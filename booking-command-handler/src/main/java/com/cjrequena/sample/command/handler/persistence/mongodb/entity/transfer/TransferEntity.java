@@ -55,7 +55,6 @@ import java.util.UUID;
   "product_type",
   "status",
   "paxes_ids",
-  "hash",
   "origin",
   "destination",
   "departure_trip",
@@ -105,14 +104,13 @@ public class TransferEntity extends ProductEntity {
     @JsonProperty("product_type") ProductType productType,
     @JsonProperty("status") ProductStatus status,
     @JsonProperty("paxes_ids") List<UUID> paxesIds,
-    @JsonProperty("hash") String hash,
     @JsonProperty("origin") LocationEntity origin,
     @JsonProperty("destination") LocationEntity destination,
     @JsonProperty("departure_trip") TripEntity departureTrip,
     @JsonProperty("return_trip") TripEntity returnTrip,
     @JsonProperty("price") TransferPriceEntity price
   ) {
-    super(productId, searchId, searchCreatedAt, productType, status, paxesIds, hash);
+    super(productId, searchId, searchCreatedAt, productType, status, paxesIds);
     this.origin = origin;
     this.destination = destination;
     this.departureTrip = departureTrip;

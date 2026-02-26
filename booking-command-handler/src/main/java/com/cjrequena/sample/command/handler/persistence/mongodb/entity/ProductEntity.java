@@ -57,8 +57,7 @@ import static com.cjrequena.sample.command.handler.shared.common.Constant.TRANSF
   "search_created_at",
   "product_type",
   "status",
-  "paxes_ids",
-  "hash"
+  "paxes_ids"
 })
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -102,9 +101,5 @@ public abstract class ProductEntity implements Serializable {
   @NotNull(message = "Paxes IDs are required")
   @Field(name = "paxes_ids")
   private List<UUID> paxesIds;
-
-  @NotNull(message = "Hash is required")
-  @Field(name = "hash")
-  private String hash;
 
 }
