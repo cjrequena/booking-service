@@ -1,6 +1,7 @@
 package com.cjrequena.sample.command.handler.controller;
 
 import com.cjrequena.sample.command.handler.controller.dto.CommandResponseDTO;
+import com.cjrequena.sample.command.handler.controller.dto.ConfirmBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.CreateBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.exception.BadRequestException;
@@ -23,11 +24,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.CACHE_CONTROL;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -84,7 +84,7 @@ public class BookingCommandController {
     path = "/create",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> place(@Valid @RequestBody CreateBookingCommandDTO dto, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> create(@Valid @RequestBody CreateBookingCommandDTO dto, ServerHttpRequest request) {
     try {
       Command command = commandMapper.toCommand(dto);
       Booking booking = (Booking)this.commandBusService.handle(command);
@@ -101,6 +101,42 @@ public class BookingCommandController {
       return Mono.just(
         ResponseEntity
           .status(HttpStatus.CREATED)
+          .headers(headers)
+          .body(responseDTO)
+      );
+
+    } catch (OptimisticConcurrencyException ex) {
+      throw new ConflictException(ex.getMessage());
+    } catch (CommandHandlerNotFoundException ex) {
+      throw new NotImplementedException(ex.getMessage());
+    } catch (PaxPriceException ex){
+      throw new BadRequestException(ex.getMessage());
+    }
+  }
+
+  @SneakyThrows
+  @PostMapping(
+    path = "/{bookingId}/confirm",
+    produces = {APPLICATION_JSON_VALUE}
+  )
+  public Mono<ResponseEntity<CommandResponseDTO>> confirm(@PathVariable UUID bookingId, ServerHttpRequest request) {
+    try {
+      ConfirmBookingCommandDTO dto = ConfirmBookingCommandDTO.builder().bookingId(bookingId).build();
+      Command command = commandMapper.toCommand(dto);
+      Booking booking = (Booking)this.commandBusService.handle(command);
+      CommandResponseDTO responseDTO = CommandResponseDTO
+        .builder()
+        .bookingId(booking.getBookingId())
+        .status(booking.getStatus())
+        .build();
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.set(CACHE_CONTROL, "no store, private, max-age=0");
+      headers.set("Booking-Id", command.getAggregateId().toString());
+
+      return Mono.just(
+        ResponseEntity
+          .status(HttpStatus.OK)
           .headers(headers)
           .body(responseDTO)
       );

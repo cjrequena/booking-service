@@ -1,7 +1,9 @@
 package com.cjrequena.sample.command.handler.domain.mapper;
 
+import com.cjrequena.sample.command.handler.controller.dto.ConfirmBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.CreateBookingCommandDTO;
 import com.cjrequena.sample.command.handler.controller.dto.PlaceBookingCommandDTO;
+import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
 import org.mapstruct.Mapper;
@@ -56,6 +58,12 @@ public interface CommandMapper {
       dto.paxes(),
       dto.leadPaxId(),
       dto.products()
+    );
+  }
+
+  default ConfirmBookingCommand toCommand(ConfirmBookingCommandDTO dto) {
+    return new ConfirmBookingCommand(
+      dto.bookingId()
     );
   }
 }

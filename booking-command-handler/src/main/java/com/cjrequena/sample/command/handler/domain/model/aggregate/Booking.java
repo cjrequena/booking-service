@@ -1,15 +1,14 @@
 package com.cjrequena.sample.command.handler.domain.model.aggregate;
 
+import com.cjrequena.sample.command.handler.domain.model.command.ConfirmBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.CreateBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.command.PlaceBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
-import com.cjrequena.sample.command.handler.domain.model.vo.BookingCreatedEventDataVO;
-import com.cjrequena.sample.command.handler.domain.model.vo.BookingPlacedEventDataVO;
-import com.cjrequena.sample.command.handler.domain.model.vo.PaxVO;
-import com.cjrequena.sample.command.handler.domain.model.vo.ProductVO;
+import com.cjrequena.sample.command.handler.domain.model.vo.*;
 import com.cjrequena.sample.command.handler.shared.common.util.JsonUtil;
 import com.cjrequena.sample.es.core.domain.model.aggregate.Aggregate;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -140,8 +139,33 @@ public class Booking extends Aggregate {
     this.leadPaxId = event.getData().leadPaxId();
     this.products = event.getData().products();
   }
-  
-  
+
+  //==========================================================
+  // Confirm Booking
+  //==========================================================
+
+  public void applyCommand(ConfirmBookingCommand command) throws JsonProcessingException {
+    final BookingConfirmedEventDataVO data = BookingConfirmedEventDataVO
+      .builder()
+      .bookingId(command.getAggregateId())
+      .bookingReference(this.bookingReference)
+      .status(BookingStatus.CONFIRMED)
+      .build();
+
+    applyUnconfirmedEvent(BookingConfirmedEvent
+      .builder()
+      .eventId(java.util.UUID.randomUUID())
+      .aggregateId(command.getAggregateId())
+      .aggregateVersion(getNextAggregateVersion())
+      .dataContentType(MediaType.APPLICATION_JSON_VALUE)
+      .data(data)
+      .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .build());
+  }
+
+  public void applyEvent(BookingConfirmedEvent event) {
+    this.status = event.getData().status();
+  }
 
   @Nonnull
   @Override

@@ -1,6 +1,8 @@
 package com.cjrequena.sample.command.handler.domain.model.enums;
 
 import com.cjrequena.sample.command.handler.domain.exception.InvalidArgumentException;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingConfirmedEvent;
+import com.cjrequena.sample.command.handler.domain.model.event.BookingCreatedEvent;
 import com.cjrequena.sample.command.handler.domain.model.event.BookingPlacedEvent;
 import com.cjrequena.sample.es.core.domain.model.event.Event;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -13,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum EventType {
 
-  BOOKING_PLACED_EVENT(BookingPlacedEvent.class, BookingPlacedEvent.class.getSimpleName());
+  BOOKING_CREATED_EVENT(BookingCreatedEvent.class, BookingCreatedEvent.class.getSimpleName()),
+  BOOKING_PLACED_EVENT(BookingPlacedEvent.class, BookingPlacedEvent.class.getSimpleName()),
+  BOOKING_CONFIRMED_EVENT(BookingConfirmedEvent.class, BookingConfirmedEvent.class.getSimpleName());
   // ==
 //  BOOKING_ORDER_PLACED_EVENT(BookingOrderPlacedEvent.class, BookingOrderPlacedEvent.class.getName()),
 //  BOOKING_ORDER_CANCELLED_EVENT(BookingOrderCancelledEvent.class, BookingOrderCancelledEvent.class.getName()),
