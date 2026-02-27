@@ -103,7 +103,7 @@ public class EventStoreService {
     // Append new events
     List<Event> unconfirmedEventsPool = aggregate.getUnconfirmedEventsPool();
     for (Event event : unconfirmedEventsPool) {
-      log.info("Appending {} event: {}", aggregateType, event);
+      log.info("Appending new {} event: {}", aggregateType, event);
       AbstractEventEntity eventEntity = event.mapToEventEntity();
       eventRepository.save(eventEntity);
     }
