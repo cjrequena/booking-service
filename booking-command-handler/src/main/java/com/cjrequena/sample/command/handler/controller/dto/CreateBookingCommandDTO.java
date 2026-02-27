@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +15,7 @@ import lombok.extern.jackson.Jacksonized;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -53,7 +55,12 @@ public record CreateBookingCommandDTO(
 
   @NotEmpty(message = "At least one product is required")
   @Valid
-  List<ProductVO> products
+  List<ProductVO> products,
 
-) implements Serializable {
+  @Schema(description = "Custom metadata as key-value pairs")
+  Map<String, Object> metadata
+
+) implements
+
+  Serializable {
 }

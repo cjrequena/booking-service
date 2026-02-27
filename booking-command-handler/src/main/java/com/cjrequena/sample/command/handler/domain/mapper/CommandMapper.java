@@ -37,10 +37,13 @@ import org.mapstruct.NullValueCheckStrategy;
 )
 public interface CommandMapper {
 
-
   // ================================================================
   // Commands  <-->  DTOs
   // ================================================================
+
+  /**
+   * PlaceBooking accepts metadata since it initializes the booking.
+   */
   default PlaceBookingCommand toCommand(PlaceBookingCommandDTO dto) {
     return new PlaceBookingCommand(
       dto.paxes(),
@@ -49,14 +52,21 @@ public interface CommandMapper {
     );
   }
 
+  /**
+   * CreateBooking accepts metadata since it initializes the booking.
+   */
   default CreateBookingCommand toCommand(CreateBookingCommandDTO dto) {
     return new CreateBookingCommand(
       dto.paxes(),
       dto.leadPaxId(),
-      dto.products()
+      dto.products(),
+      dto.metadata()
     );
   }
 
+  /**
+   * State transition commands don't accept metadata - they use aggregate's metadata.
+   */
   default ConfirmBookingCommand toCommand(ConfirmBookingCommandDTO dto) {
     return new ConfirmBookingCommand(
       dto.bookingId()

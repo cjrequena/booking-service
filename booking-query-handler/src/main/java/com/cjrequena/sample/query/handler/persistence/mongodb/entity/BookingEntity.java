@@ -87,4 +87,6 @@ public class BookingEntity implements Serializable {
   @Field(name = "products")
   private List<ProductEntity> products;
 
+  @Field(name = "metadata")
+  private transient java.util.Map<String, Object> metadata;
 }

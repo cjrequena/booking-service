@@ -65,6 +65,7 @@ public class BookingProjectionService {
         .paxes(paxMapper.toPaxList(aggregate.getPaxes()))
         .leadPaxId(aggregate.getLeadPaxId())
         .products(productMapper.toProductList(aggregate.getProducts()))
+        .metadata(aggregate.getMetadata())
         .build();
       
       BookingEntity savedBooking = bookingProjectionRepository.save(booking);

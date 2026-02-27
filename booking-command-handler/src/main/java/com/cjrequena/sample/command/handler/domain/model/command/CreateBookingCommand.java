@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -55,24 +56,30 @@ public class CreateBookingCommand extends Command {
   @Valid
   private final List<ProductVO> products;
 
+  @Valid
+  Map<String, Object> metadata;
+
   /**
    * Constructs a new PlaceBookingCommand.
    *
    * @param paxes the list of passengers
    * @param leadPaxId the ID of the lead passenger
    * @param products the list of products in the booking
+   * @param metadata optional metadata as JSON string
    */
   @Builder
   public CreateBookingCommand(
     List<PaxVO> paxes,
     UUID leadPaxId,
-    List<ProductVO> products
+    List<ProductVO> products,
+    Map<String, Object> metadata
   ) {
     super(UUID.randomUUID(), AggregateType.BOOKING_ORDER.getType());
     this.bookingReference = generateBookingReference();
     this.paxes = paxes;
     this.leadPaxId = leadPaxId;
     this.products = products;
+    this.metadata = metadata;
   }
 
   private static String generateBookingReference() {

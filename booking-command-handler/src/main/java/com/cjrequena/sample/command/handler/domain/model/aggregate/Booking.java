@@ -27,6 +27,7 @@ import lombok.ToString;
 import org.springframework.http.MediaType;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -58,6 +59,9 @@ public class Booking extends Aggregate {
   @Valid
   private List<ProductVO> products;
 
+  @Valid
+  Map<String, Object> metadata;
+
   @Builder
   @JsonCreator
   public Booking(
@@ -79,6 +83,7 @@ public class Booking extends Aggregate {
       .paxes(command.getPaxes())
       .leadPaxId(command.getLeadPaxId())
       .products(command.getProducts())
+      .metadata(command.getMetadata())
       .build();
 
     applyUnconfirmedEvent(BookingCreatedEvent
@@ -99,6 +104,7 @@ public class Booking extends Aggregate {
     this.paxes = event.getData().paxes();
     this.leadPaxId = event.getData().leadPaxId();
     this.products = event.getData().products();
+    this.metadata = event.getData().metadata();
   }
 
   //==========================================================

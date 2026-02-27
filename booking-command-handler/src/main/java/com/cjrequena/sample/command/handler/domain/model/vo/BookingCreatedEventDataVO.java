@@ -15,6 +15,7 @@ import lombok.extern.jackson.Jacksonized;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -62,7 +63,10 @@ public record BookingCreatedEventDataVO(
 
   @NotEmpty(message = "At least one product is required")
   @Valid
-  List<ProductVO> products
+  List<ProductVO> products,
+
+  @Valid
+  Map<String, Object> metadata
 
 ) implements Serializable {
 }
