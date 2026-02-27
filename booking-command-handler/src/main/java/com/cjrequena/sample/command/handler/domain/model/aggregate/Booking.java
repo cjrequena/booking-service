@@ -94,6 +94,8 @@ public class Booking extends Aggregate {
       .dataContentType(MediaType.APPLICATION_JSON_VALUE)
       .data(data)
       .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .dataSchema(null)
+      .extension(null)
       .build());
   }
 
@@ -130,7 +132,9 @@ public class Booking extends Aggregate {
         .dataContentType(MediaType.APPLICATION_JSON_VALUE)
         .data(data)
         .dataBase64(JsonUtil.objectToJsonBase64(data))
-        .build());
+        .dataSchema(null)
+        .extension(null)
+      .build());
   }
 
   public void applyEvent(BookingPlacedEvent event) {
@@ -162,6 +166,8 @@ public class Booking extends Aggregate {
       .dataContentType(MediaType.APPLICATION_JSON_VALUE)
       .data(data)
       .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .dataSchema(null)
+      .extension(null)
       .build());
   }
 
@@ -189,6 +195,8 @@ public class Booking extends Aggregate {
       .dataContentType(MediaType.APPLICATION_JSON_VALUE)
       .data(data)
       .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .dataSchema(null)
+      .extension(null)
       .build());
   }
 
@@ -216,6 +224,8 @@ public class Booking extends Aggregate {
       .dataContentType(MediaType.APPLICATION_JSON_VALUE)
       .data(data)
       .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .dataSchema(null)
+      .extension(null)
       .build());
   }
 
@@ -243,6 +253,8 @@ public class Booking extends Aggregate {
       .dataContentType(MediaType.APPLICATION_JSON_VALUE)
       .data(data)
       .dataBase64(JsonUtil.objectToJsonBase64(data))
+      .dataSchema(null)
+      .extension(null)
       .build());
   }
 

@@ -42,6 +42,9 @@ management.info.defaults.enabled: true # Whether to enable default info contribu
 management.info.env.enabled: true # Whether to enable environment info.
 management.info.git.enabled: true # Whether to enable git info.
 management.info.git.mode: full # Mode to use to expose git information.
+# TRACING
+management.tracing.sampling.probability: 1.0  # trace 100% (dev only)
+management.tracing.endpoints.web.exposure.include: "*"
 
 spring.web.resources.add-mappings: true # To fix favicon not found issue.
 

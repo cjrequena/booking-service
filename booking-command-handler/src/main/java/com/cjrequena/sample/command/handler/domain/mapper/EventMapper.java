@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Mapper(
@@ -46,11 +47,17 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingPlacedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingPlacedEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingPlacedEvent eventEntityToBookingPlacedEvent(EventEntity entity);
 
   /**
@@ -89,11 +96,17 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingCreatedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingCreatedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingCreatedEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingCreatedEvent eventEntityToBookingCreatedEvent(EventEntity entity);
 
   /**
@@ -132,12 +145,19 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingConfirmedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingConfirmedEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingConfirmedEvent eventEntityToBookingConfirmedEvent(EventEntity entity);
+
 
   /**
    * Deserializes the raw JSON string stored in {@link EventEntity#getData()} into a typed
@@ -175,11 +195,17 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingCancelledEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingCancelledEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingCancelledEvent eventEntityToBookingCancelledEvent(EventEntity entity);
 
   /**
@@ -218,11 +244,17 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingCompletedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingCompletedEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingCompletedEvent eventEntityToBookingCompletedEvent(EventEntity entity);
 
   /**
@@ -261,11 +293,17 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize BookingExpiredEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+    }
+    try {
+      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
+    } catch (Exception e) {
+      throw new MapperException("Failed to serialize EventExtension to JSON", e);
     }
   }
 
   @Mapping(target = "data", expression = "java(deserializeDataToBookingExpiredEventDataVO(entity.getData()))")
+  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
   BookingExpiredEvent eventEntityToBookingExpiredEvent(EventEntity entity);
 
   /**
@@ -284,7 +322,18 @@ public interface EventMapper {
   }
 
   // ================================================================
-  // New method to map a List of EventEntity to a List of Event
+  //
+  // ================================================================
+  default Map<String,Object> deserializeEventExtension(String json) {
+    try {
+      return MetadataVO.of(json).toMap();
+    } catch (Exception e) {
+      throw new MapperException("Failed to deserialize EventEntity data to BookingCreatedEventDataVO", e);
+    }
+  }
+
+  // ================================================================
+  // Method to map a List of EventEntity to a List of Event
   // ================================================================
   default List<Event> toEventList(List<EventEntity> eventEntities) {
     return eventEntities

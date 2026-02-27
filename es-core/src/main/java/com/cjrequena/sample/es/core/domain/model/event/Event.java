@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.lang.reflect.Method;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -36,16 +37,19 @@ public abstract class Event {
   protected String eventType;
 
   // The content type of the event data. Must adhere to RFC 2046 format.
-  public String dataContentType;
+  protected String dataContentType;
 
   // Base64 encoded event payload. Must adhere to RFC4648.
   protected String dataBase64;
 
   // A URI describing the schema for the event data
-  //protected String dataSchema;
+  protected String dataSchema;
 
   // The time the event occurred
   protected OffsetDateTime time;
+
+  // Metadata extensions
+  protected Map<String, Object> extension;
 
   public AbstractEventEntity mapToEventEntity() {
     log.info("Mapping to event entity {}", this);

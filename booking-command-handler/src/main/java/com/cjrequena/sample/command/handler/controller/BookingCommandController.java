@@ -12,6 +12,7 @@ import com.cjrequena.sample.command.handler.service.command.CommandBusService;
 import com.cjrequena.sample.command.handler.shared.common.Constant;
 import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyException;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
+import io.micrometer.tracing.Tracer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -40,13 +40,14 @@ public class BookingCommandController {
 
   private final CommandBusService commandBusService;
   private final CommandMapper commandMapper;
+  private final Tracer tracer;
 
   @SneakyThrows
   @PostMapping(
     path = "/place",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> place(@Valid @RequestBody PlaceBookingCommandDTO dto, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> place(@Valid @RequestBody PlaceBookingCommandDTO dto) {
     try {
       Command command = commandMapper.toCommand(dto);
       Booking booking = (Booking)this.commandBusService.handle(command);
@@ -81,7 +82,7 @@ public class BookingCommandController {
     path = "/create",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> create(@Valid @RequestBody CreateBookingCommandDTO dto, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> create(@Valid @RequestBody CreateBookingCommandDTO dto) {
     try {
       Command command = commandMapper.toCommand(dto);
       Booking booking = (Booking)this.commandBusService.handle(command);
@@ -116,7 +117,7 @@ public class BookingCommandController {
     path = "/{bookingId}/confirm",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> confirm(@PathVariable UUID bookingId, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> confirm(@PathVariable UUID bookingId) {
     try {
       ConfirmBookingCommandDTO dto = ConfirmBookingCommandDTO.builder().bookingId(bookingId).build();
       Command command = commandMapper.toCommand(dto);
@@ -152,7 +153,7 @@ public class BookingCommandController {
     path = "/{bookingId}/cancel",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> cancel(@PathVariable UUID bookingId, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> cancel(@PathVariable UUID bookingId) {
     try {
       CancelBookingCommandDTO dto = CancelBookingCommandDTO.builder().bookingId(bookingId).build();
       Command command = commandMapper.toCommand(dto);
@@ -188,7 +189,7 @@ public class BookingCommandController {
     path = "/{bookingId}/complete",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> complete(@PathVariable UUID bookingId, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> complete(@PathVariable UUID bookingId) {
     try {
       CompleteBookingCommandDTO dto = CompleteBookingCommandDTO.builder().bookingId(bookingId).build();
       Command command = commandMapper.toCommand(dto);
@@ -224,7 +225,7 @@ public class BookingCommandController {
     path = "/{bookingId}/expire",
     produces = {APPLICATION_JSON_VALUE}
   )
-  public Mono<ResponseEntity<CommandResponseDTO>> expire(@PathVariable UUID bookingId, ServerHttpRequest request) {
+  public Mono<ResponseEntity<CommandResponseDTO>> expire(@PathVariable UUID bookingId) {
     try {
       ExpireBookingCommandDTO dto = ExpireBookingCommandDTO.builder().bookingId(bookingId).build();
       Command command = commandMapper.toCommand(dto);
