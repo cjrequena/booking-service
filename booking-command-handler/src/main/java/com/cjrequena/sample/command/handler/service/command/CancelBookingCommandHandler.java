@@ -4,6 +4,7 @@ import com.cjrequena.sample.command.handler.domain.mapper.EventMapper;
 import com.cjrequena.sample.command.handler.domain.model.command.CancelBookingCommand;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.es.core.configuration.EventStoreConfigurationProperties;
+import com.cjrequena.sample.es.core.domain.exception.AggregateNotFoundException;
 import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyException;
 import com.cjrequena.sample.es.core.domain.model.aggregate.Aggregate;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
@@ -35,6 +36,13 @@ public class CancelBookingCommandHandler extends CommandHandler<CancelBookingCom
 
     if (!(command instanceof CancelBookingCommand)) {
       throw new IllegalArgumentException("Expected command of type CancelBookingCommand but received " + command.getClass().getSimpleName());
+    }
+
+    if (!this.eventStoreService.verifyIfAggregateExist(command.getAggregateId(), command.getAggregateType())) {
+      String errorMessage = String.format(
+        "The aggregate '%s' with ID '%s' does not exist'.", command.getAggregateType(), command.getAggregateId()
+      );
+      throw new AggregateNotFoundException(errorMessage);
     }
 
     // Get the current aggregate

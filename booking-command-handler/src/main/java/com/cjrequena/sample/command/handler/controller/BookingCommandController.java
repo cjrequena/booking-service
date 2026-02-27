@@ -3,6 +3,7 @@ package com.cjrequena.sample.command.handler.controller;
 import com.cjrequena.sample.command.handler.controller.dto.*;
 import com.cjrequena.sample.command.handler.controller.exception.BadRequestException;
 import com.cjrequena.sample.command.handler.controller.exception.ConflictException;
+import com.cjrequena.sample.command.handler.controller.exception.NotFoundException;
 import com.cjrequena.sample.command.handler.controller.exception.NotImplementedException;
 import com.cjrequena.sample.command.handler.domain.exception.CommandHandlerNotFoundException;
 import com.cjrequena.sample.command.handler.domain.exception.PaxPriceException;
@@ -10,6 +11,7 @@ import com.cjrequena.sample.command.handler.domain.mapper.CommandMapper;
 import com.cjrequena.sample.command.handler.domain.model.aggregate.Booking;
 import com.cjrequena.sample.command.handler.service.command.CommandBusService;
 import com.cjrequena.sample.command.handler.shared.common.Constant;
+import com.cjrequena.sample.es.core.domain.exception.AggregateNotFoundException;
 import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyException;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
 import io.swagger.v3.oas.annotations.Operation;
@@ -283,14 +285,14 @@ public class BookingCommandController {
    * Centralized command handling logic to eliminate code duplication.
    * Handles command execution, response building, and error translation.
    *
-   * @param command the domain command
+   * @param command       the domain command
    * @param successStatus the HTTP status to return on success
    * @return Mono containing the response entity
    */
   private Mono<ResponseEntity<CommandResponseDTO>> handleCommand(Command command, HttpStatus successStatus) {
     try {
       Booking booking = (Booking) commandBusService.handle(command);
-      
+
       CommandResponseDTO responseDTO = CommandResponseDTO
         .builder()
         .bookingId(booking.getBookingId())
@@ -316,6 +318,8 @@ public class BookingCommandController {
     } catch (PaxPriceException ex) {
       log.warn("Business rule violation: {}", ex.getMessage());
       throw new BadRequestException(ex.getMessage());
+    } catch (AggregateNotFoundException ex) {
+      throw new NotFoundException(ex.getMessage());
     } catch (Exception ex) {
       log.error("Unexpected error handling command", ex);
       throw ex;
