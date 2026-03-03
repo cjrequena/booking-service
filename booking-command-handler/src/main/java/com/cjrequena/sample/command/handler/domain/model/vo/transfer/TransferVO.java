@@ -39,11 +39,11 @@ import java.util.Optional;
  * <p>
  * Business Rules:
  * <ul>
- *   <li>Departure trip is always required</li>
- *   <li>Return trip is optional (null for one-way transfers)</li>
+ *   <li>Oubound trip is always required</li>
+ *   <li>Inbound trip is optional (null for one-way transfers)</li>
  *   <li>If return trip exists, it must be after departure trip</li>
- *   <li>Departure trip must be ONE_WAY or OUTBOUND type</li>
- *   <li>Return trip must be INBOUND type</li>
+ *   <li>Oubound trip must be ONE_WAY or OUTBOUND type</li>
+ *   <li>Inbound trip must be INBOUND type</li>
  * </ul>
  * </p>
  *
@@ -74,16 +74,16 @@ public record TransferVO(
   @Valid
   LocationVO destination,
 
-  @NotNull(message = "Departure trip is required")
+  @NotNull(message = "Outbound trip is required")
   @Valid
-  TripVO departureTrip,
+  TripVO outboundTrip,
 
   /**
-   * Return trip - only present for round-trip transfers.
+   * Inbound trip - only present for round-trip transfers.
    * Null for one-way transfers.
    */
   @Valid
-  TripVO returnTrip,
+  TripVO inboundTrip,
 
   @NotNull(message = "Price is required")
   @Valid
@@ -95,30 +95,30 @@ public record TransferVO(
    * Canonical constructor with business rule validation.
    */
   public TransferVO {
-    // Validate departure trip type
-    if (departureTrip != null) {
-      TransferType depType = departureTrip.transferType();
+    // Validate outbound trip type
+    if (outboundTrip != null) {
+      TransferType depType = outboundTrip.transferType();
       if (depType != TransferType.ONE_WAY && depType != TransferType.OUTBOUND) {
         throw new InvalidArgumentException(
-          "Departure trip must be ONE_WAY or OUTBOUND, but was: " + depType
+          "Outbound trip must be ONE_WAY or OUTBOUND, but was: " + depType
         );
       }
     }
 
-    // Validate return trip consistency
-    if (returnTrip != null) {
-      TransferType retType = returnTrip.transferType();
+    // Validate inbound trip consistency
+    if (inboundTrip != null) {
+      TransferType retType = inboundTrip.transferType();
       if (retType != TransferType.INBOUND) {
         throw new InvalidArgumentException(
-          "Return trip must be INBOUND, but was: " + retType
+          "Inbound trip must be INBOUND, but was: " + retType
         );
       }
 
-      // Validate return trip is after departure
-      if (departureTrip != null && 
-          !returnTrip.pickupDatetime().isAfter(departureTrip.pickupDatetime())) {
+      // Validate inbound trip is after outbound
+      if (outboundTrip != null && 
+          !inboundTrip.pickupDatetime().isAfter(outboundTrip.pickupDatetime())) {
         throw new InvalidArgumentException(
-          "Return trip pickup must be after departure trip pickup"
+          "Inbound trip pickup must be after outbound trip pickup"
         );
       }
     }
@@ -127,31 +127,31 @@ public record TransferVO(
   /**
    * Checks if this is a round-trip transfer.
    *
-   * @return true if return trip is present
+   * @return true if inbound trip is present
    */
   @com.fasterxml.jackson.annotation.JsonIgnore
   public boolean isRoundTrip() {
-    return returnTrip != null;
+    return inboundTrip != null;
   }
 
   /**
    * Checks if this is a one-way transfer.
    *
-   * @return true if return trip is not present
+   * @return true if inbound trip is not present
    */
   @com.fasterxml.jackson.annotation.JsonIgnore
   public boolean isOneWay() {
-    return returnTrip == null;
+    return inboundTrip == null;
   }
 
   /**
-   * Gets the return trip if present.
+   * Gets the inbound trip if present.
    *
-   * @return Optional containing the return trip, or empty if one-way
+   * @return Optional containing the inbound trip, or empty if one-way
    */
   @com.fasterxml.jackson.annotation.JsonIgnore
-  public Optional<TripVO> getReturnTrip() {
-    return Optional.ofNullable(returnTrip);
+  public Optional<TripVO> getInboundTrip() {
+    return Optional.ofNullable(inboundTrip);
   }
 
   /**
@@ -169,8 +169,8 @@ public record TransferVO(
       metadata.withStatus(newStatus),
       origin,
       destination,
-      departureTrip,
-      returnTrip,
+      outboundTrip,
+      inboundTrip,
       price
     );
   }

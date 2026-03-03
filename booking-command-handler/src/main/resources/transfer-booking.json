@@ -104,7 +104,7 @@
         "full_address": "Hotel Riu Festival, Palma",
         "formatted_address": "Camí de les Meravelles, 7, Platja de Palma, 07610 Palma, Illes Balears, Spain"
       },
-      "departure_trip": {
+      "outbound_trip": {
         "trip_id": "84309074-24b4-48b0-9b80-76f82199561e",
         "pickup_datetime": "2024-11-19T16:19:17.580896+01:00",
         "transfer_type": "Private",
@@ -120,7 +120,7 @@
         },
         "status": "Pending"
       },
-      "return_trip": {
+      "outbound_trip": {
         "trip_id": "de6ef6c9-8cc6-4959-9433-ec956b1044e6",
         "pickup_datetime": "2024-11-21T16:19:17.581756+01:00",
         "transfer_type": "Private",

@@ -1921,7 +1921,7 @@ CREATE INDEX idx_booking_product_details ON booking_product USING GIN (product_d
     "iata_code": null,
     "full_address": "Times Square, NY"
   },
-  "departure_trip": {
+  "outbound_trip": {
     "trip_id": "uuid",
     "pickup_datetime": "2024-03-15T10:00:00Z",
     "transfer_type": "OUTBOUND",
@@ -1934,7 +1934,7 @@ CREATE INDEX idx_booking_product_details ON booking_product USING GIN (product_d
       "max_paxes": 4
     }
   },
-  "return_trip": null,
+  "outbound_trip": null,
   "price": {
     "service_type": "PRIVATE",
     "currency": "USD",

@@ -34,8 +34,8 @@ import java.util.UUID;
  * <p>
  * Transfer Types:
  * <ul>
- *   <li>One-way: Single trip from origin to destination (returnTrip is null)</li>
- *   <li>Round-trip: Includes both outbound and return trips</li>
+ *   <li>One-way: Single trip from origin to destination (inboundTrip is null)</li>
+ *   <li>Round-trip: Includes both outbound and inbound trips</li>
  * </ul>
  * </p>
  *
@@ -58,8 +58,8 @@ import java.util.UUID;
   "paxes_ids",
   "origin",
   "destination",
-  "departure_trip",
-  "return_trip",
+  "outbound_trip",
+  "inbound_trip",
   "price"
 })
 @Schema(description = "Represents a transfer product")
@@ -77,18 +77,18 @@ public class TransferEntity extends ProductEntity {
   @Field(name = "destination")
   private LocationEntity destination;
 
-  @NotNull(message = "Departure trip is required")
+  @NotNull(message = "Outbound trip is required")
   @Valid
-  @Field(name = "departure_trip")
-  private TripEntity departureTrip;
+  @Field(name = "outbound_trip")
+  private TripEntity outboundTrip;
 
   /**
-   * Return trip - only present for round-trip transfers.
+   * Inbound trip - only present for round-trip transfers.
    * Null for one-way transfers.
    */
   @Valid
-  @Field(name = "return_trip")
-  private TripEntity returnTrip;
+  @Field(name = "inbound_trip")
+  private TripEntity inboundTrip;
 
   @NotNull(message = "Price is required")
   @Valid
@@ -108,15 +108,15 @@ public class TransferEntity extends ProductEntity {
     @JsonProperty("paxes_ids") List<UUID> paxesIds,
     @JsonProperty("origin") LocationEntity origin,
     @JsonProperty("destination") LocationEntity destination,
-    @JsonProperty("departure_trip") TripEntity departureTrip,
-    @JsonProperty("return_trip") TripEntity returnTrip,
+    @JsonProperty("outbound_trip") TripEntity outboundTrip,
+    @JsonProperty("inbound_trip") TripEntity inboundTrip,
     @JsonProperty("price") TransferPriceEntity price
   ) {
     super(productId, searchId, searchCreatedAt, productType, status, paxesIds);
     this.origin = origin;
     this.destination = destination;
-    this.departureTrip = departureTrip;
-    this.returnTrip = returnTrip;
+    this.outboundTrip = outboundTrip;
+    this.inboundTrip = inboundTrip;
     this.price = price;
   }
 
