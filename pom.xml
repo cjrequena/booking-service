@@ -93,6 +93,7 @@
         <module>es-core</module>
         <module>booking-command-handler</module>
         <module>booking-query-handler</module>
+        <module>booking-query-handler-postgres</module>
     </modules>
     <dependencyManagement>
         <dependencies>

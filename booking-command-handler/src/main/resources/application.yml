@@ -166,7 +166,7 @@ logging.level:
   org.flywaydb: INFO
   com.zaxxer.hikari: INFO
   com.cjrequena: INFO
-  com.cjrequena.core.eventstore: INFO
+  com.cjrequena.sample.es.core: INFO
 logging.pattern:
   console: "%highlight{%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n}{
       FATAL=bg_red, 

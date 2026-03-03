@@ -8,7 +8,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.cjrequena.core.eventstore</groupId>
+    <groupId>com.cjrequena.sample.es.core</groupId>
     <artifactId>es-core</artifactId>
     <packaging>jar</packaging>
     <!---->

@@ -2,7 +2,7 @@
 # DEFAULT
 # ----------------------------------------
 server.servlet.context-path: / # Context path of the application.
-server.port: ${SERVER_PORT:7080} # Server HTTP port.
+server.port: ${SERVER_PORT:7081} # Server HTTP port.
 spring.application.name: '@project.artifactId@'
 spring.application.version: '@project.version@'
 spring.profiles.active: ${SPRING_PROFILES_ACTIVE:local}
@@ -44,18 +44,98 @@ management.info.git.enabled: true # Whether to enable git info.
 management.info.git.mode: full # Mode to use to expose git information.
 
 # ----------------------------------------
-# MongoDB :: Projection
+# Event Store Subscription Configuration
 # ----------------------------------------
-spring.data.mongodb:
-  host: ${MONGODB_HOST:localhost}
-  port: 27017
-  database: booking
-  username: root
-  password: root
-  authentication-database: admin
-  auto-index-creation: true
-  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
-  # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+eventstore:
+  subscription:
+    enabled: ${EVENTSTORE_SUBSCRIPTION_ENABLED:true}
+    name: ${EVENTSTORE_SUBSCRIPTION_NAME:booking-query-handler-postgres}
+    polling-interval: ${EVENTSTORE_POLLING_INTERVAL:1000} # milliseconds
+    polling-initial-delay: ${EVENTSTORE_POLLING_INITIAL_DELAY:5000} # milliseconds
+  snapshot:
+    booking-order:
+      enabled: ${EVENTSTORE_SNAPSHOT_BOOKING_ENABLED:true}
+      frequency: ${EVENTSTORE_SNAPSHOT_BOOKING_FREQUENCY:100} # events
+
+# ----------------------------------------
+# Datasource Configuration :: Event Store
+# ----------------------------------------
+spring.datasource.eventstore:
+  type: com.zaxxer.hikari.HikariDataSource
+  jdbcUrl: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/postgres
+  driver-class-name: org.postgresql.Driver
+  username: postgres
+  password: postgres
+  testOnBorrow: true
+  validationQuery: SELECT 1
+  pool-name: EventStoreHikariPool
+  connection-timeout: 20000
+  minimum-idle: 5
+  maximum-pool-size: 12
+  idle-timeout: 300000
+  max-lifetime: 1200000
+  auto-commit: false
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: false
+        format_sql: true
+        use_sql: true
+        id.new_generator_mappings: false
+        search.autoregister_listeners: false
+        bytecode.use_reflection_optimizer: false
+        jdbc.lob.non_contextual_creation: true
+
+# ----------------------------------------
+# Datasource Configuration :: PostgreSQL Projection
+# ----------------------------------------
+spring.datasource.projection:
+  type: com.zaxxer.hikari.HikariDataSource
+  jdbcUrl: jdbc:postgresql://${POSTGRES_HOST:localhost}:5433/postgres
+  driver-class-name: org.postgresql.Driver
+  username: postgres
+  password: postgres
+  testOnBorrow: true
+  validationQuery: SELECT 1
+  pool-name: ProjectionHikariPool
+  connection-timeout: 20000
+  minimum-idle: 5
+  maximum-pool-size: 12
+  idle-timeout: 300000
+  max-lifetime: 1200000
+  auto-commit: false
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: false
+        format_sql: true
+        use_sql: true
+        id.new_generator_mappings: false
+        search.autoregister_listeners: false
+        bytecode.use_reflection_optimizer: false
+        jdbc.lob.non_contextual_creation: true
+
+# ----------------------------------------
+# Flyway Configuration
+# ----------------------------------------
+# Flyway auto-configuration is disabled because we use custom FlywayConfiguration
+# to target the projection datasource specifically
+spring.flyway:
+  enabled: false
+
+# ----------------------------------------
+# Cache Configuration
+# ----------------------------------------
+spring.cache:
+  type: caffeine
+  caffeine:
+    spec: maximumSize=1000,expireAfterWrite=300s
+  cache-names:
+    - postgres-bookings
 
 # ----------------------------------------
 # springdoc :: swagger configuration
@@ -80,7 +160,10 @@ logging.level:
   org.flywaydb: INFO
   com.zaxxer.hikari: INFO
   com.cjrequena: INFO
+  com.cjrequena.sample.query.handler.postgres: DEBUG
   com.cjrequena.sample.es.core: INFO
+  org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:INFO}
+  org.hibernate.type.descriptor.sql.BasicBinder: ${HIBERNATE_BINDER_LOG_LEVEL:TRACE}
 logging.pattern:
   console: "%highlight{%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n}{
       FATAL=bg_red, 

@@ -1,17 +1,17 @@
 services:
   # -------------------------------------------------------
-  # Postgres
+  # Postgres :: Event Store
   # -------------------------------------------------------
-  postgres:
+  eventstore:
     image: postgres:${POSTGRES_VERSION}
-    container_name: postgres
-    hostname: postgres
+    container_name: eventstore
+    hostname: eventstore
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGDATA: /data/postgres
     volumes:
-      - postgres-data:/data/postgres
+      - eventstore-data:/data/postgres
       - $PWD/provision/V1.0__eventstore_schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
     ports:
       - "5432:5432"
@@ -19,12 +19,30 @@ services:
       - local-network
     restart: unless-stopped
   # -------------------------------------------------------
-  # MongoDB
+  # Postgres :: Projection
   # -------------------------------------------------------
-  mongo:
+  postgres-booking-projection:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: postgres-booking-projection
+    hostname: postgres-booking-projection
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres-booking-projection-data:/data/postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - local-network
+    restart: unless-stopped
+  # -------------------------------------------------------
+  # MongoDB :: Projection
+  # -------------------------------------------------------
+  mongo-booking-projection:
     image: mongo:${MONGO_VERSION}
-    container_name: mongo
-    hostname: mongo
+    container_name: mongo-booking-projection
+    hostname: mongo-booking-projection
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
@@ -36,30 +54,6 @@ services:
     volumes:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
-  # -------------------------------------------------------
-  # Mongo express
-  # -------------------------------------------------------
-  mongo-express:
-    image: mongo-express:${MONGO_EXPRESS_VERSION}
-    container_name: mongo-express
-    hostname: mongo-express
-    restart: always
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-root}
-      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-root}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD:-root}
-    ports:
-      - "8081:8081"
-    networks:
-      - local-network
-    depends_on:
-      - mongo
-    links:
-      - mongo
   # -------------------------------------------------------
   # Redis
   # -------------------------------------------------------
@@ -232,7 +226,8 @@ networks:
 # Volumes
 # -------------------------------------------------------
 volumes:
-  postgres-data:
+  eventstore-data:
+  postgres-booking-projection-data:
   mongo-data:
   mongo-config:
   kafka-data:
