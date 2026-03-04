@@ -109,7 +109,7 @@ The Booking Service is split into two independent microservices:
 └────────────────────────────┘      │   - booking-events         │
                                     └────────────────────────────┘
 
-`````
+```
 
 ### Projection Synchronization Strategies
 
