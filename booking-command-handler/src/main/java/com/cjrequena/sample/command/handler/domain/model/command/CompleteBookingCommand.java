@@ -3,6 +3,7 @@ package com.cjrequena.sample.command.handler.domain.model.command;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -25,6 +26,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 public class CompleteBookingCommand extends Command {
 
+  @Builder
   public CompleteBookingCommand(
     @NotNull(message = "Booking ID is required") UUID bookingId
   ) {

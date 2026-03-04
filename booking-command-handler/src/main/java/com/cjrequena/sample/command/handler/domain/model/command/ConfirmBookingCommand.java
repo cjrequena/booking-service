@@ -3,6 +3,7 @@ package com.cjrequena.sample.command.handler.domain.model.command;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -35,6 +36,7 @@ public class ConfirmBookingCommand extends Command {
    *
    * @param bookingId the ID of the booking to confirm
    */
+  @Builder
   public ConfirmBookingCommand(
     @NotNull(message = "Booking ID is required") UUID bookingId
   ) {
