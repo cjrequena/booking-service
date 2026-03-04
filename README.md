@@ -140,6 +140,7 @@ projections.handlers.enabled: true
 - Easier to scale query handlers independently
 
 **Layout:**
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                   Command-Handler                           │
 │                  (Pure Command Side)                        │
@@ -168,6 +169,7 @@ projections.handlers.enabled: true
 │  5. Updates PostgreSQL projection                           │
 │  6. Exposes query endpoints                                 │
 └─────────────────────────────────────────────────────────────┘
+```
 
 #### Strategy 2: Command-Handler Pushes Projections
 ```yaml
