@@ -7,6 +7,7 @@ import com.cjrequena.sample.es.core.domain.model.command.Command;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,8 @@ public class CommandBusService {
 
   private final List<CommandHandler<? extends Command>> commandHandlers;
   private final List<ProjectionHandler> projectionHandlers;
+  @Value("${projections.handlers.enabled}")
+  private boolean projectionsHandlersEnabled;
 
   public Aggregate handle(Command command) {
 
@@ -37,10 +40,12 @@ public class CommandBusService {
         final Aggregate aggregate = commandHandler.handle(command);
 
         // Save or Update the projection database
-        projectionHandlers
-          .stream()
-          .filter(handler -> handler.getAggregateType().getType().equals(aggregate.getAggregateType()))
-          .forEach(handler -> handler.handle(aggregate));
+        if(projectionsHandlersEnabled) {
+          projectionHandlers
+            .stream()
+            .filter(handler -> handler.getAggregateType().getType().equals(aggregate.getAggregateType()))
+            .forEach(handler -> handler.handle(aggregate));
+        }
 
         return aggregate; // ✅ return here
       })

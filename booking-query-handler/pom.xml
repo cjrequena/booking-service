@@ -133,6 +133,12 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- -->
+        <dependency>
+            <groupId>com.cjrequena.core.eventstore</groupId>
+            <artifactId>es-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <!-- -->
     <build>

@@ -3,7 +3,7 @@ package com.cjrequena.sample.query.handler.controller;
 import com.cjrequena.sample.query.handler.controller.exception.NotFoundException;
 import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundException;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
-import com.cjrequena.sample.query.handler.service.BookingProjectionService;
+import com.cjrequena.sample.query.handler.service.projection.BookingProjectionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;

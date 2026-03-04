@@ -44,6 +44,57 @@ management.info.git.enabled: true # Whether to enable git info.
 management.info.git.mode: full # Mode to use to expose git information.
 
 # ----------------------------------------
+# EventStore DataSource Configuration
+# ----------------------------------------
+spring:
+  datasource:
+    eventstore:
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbcUrl: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/postgres
+      driver-class-name: org.postgresql.Driver
+      username: postgres
+      password: postgres
+      testOnBorrow: true
+      validationQuery: SELECT 1
+      pool-name: EventStoreHikariPool
+      connection-timeout: 20000
+      minimum-idle: 5
+      maximum-pool-size: 12
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: false
+      jpa:
+        open-in-view: false
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+            show_sql: false
+            format_sql: true
+            use_sql: true
+            id.new_generator_mappings: false
+            search.autoregister_listeners: false
+            bytecode.use_reflection_optimizer: false
+            jdbc.lob.non_contextual_creation: true
+            #default_schema: eventstore
+
+# ----------------------------------------
+# Event store and Event subscriptions.
+# ----------------------------------------
+eventstore:
+  snapshot:
+    # The aggregate type
+    Booking:
+      enabled: true
+      interval: 5
+  # Available subscription: polling, postgres-channel
+  subscription:
+    enabled: true
+    #name: bqh-mongo-projection
+    name: bqh-mongo-projection-${random.int(100)}
+    polling-initial-delay: PT6S
+    polling-interval: PT6S
+
+# ----------------------------------------
 # MongoDB :: Projection
 # ----------------------------------------
 spring.data.mongodb:
@@ -56,6 +107,11 @@ spring.data.mongodb:
   auto-index-creation: true
   uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
   # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+
+# ----------------------------------------
+# Projections
+# ----------------------------------------
+projections.handlers.enabled: true
 
 # ----------------------------------------
 # springdoc :: swagger configuration

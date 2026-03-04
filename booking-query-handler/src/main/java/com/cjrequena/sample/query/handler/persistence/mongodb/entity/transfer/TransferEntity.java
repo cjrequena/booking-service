@@ -1,7 +1,7 @@
 package com.cjrequena.sample.query.handler.persistence.mongodb.entity.transfer;
 
-import com.cjrequena.sample.query.handler.domain.enums.ProductStatus;
-import com.cjrequena.sample.query.handler.domain.enums.ProductType;
+import com.cjrequena.sample.query.handler.domain.model.enums.ProductStatus;
+import com.cjrequena.sample.query.handler.domain.model.enums.ProductType;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.ProductEntity;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeDeserializer;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeSerializer;

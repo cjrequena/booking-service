@@ -1,4 +1,4 @@
-package com.cjrequena.sample.query.handler.domain.enums;
+package com.cjrequena.sample.query.handler.domain.model.enums;
 
 import com.cjrequena.sample.query.handler.domain.exception.InvalidArgumentException;
 import com.fasterxml.jackson.annotation.JsonCreator;

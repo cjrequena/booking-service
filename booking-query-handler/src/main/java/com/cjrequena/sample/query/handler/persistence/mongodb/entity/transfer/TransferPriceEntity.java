@@ -1,6 +1,6 @@
 package com.cjrequena.sample.query.handler.persistence.mongodb.entity.transfer;
 
-import com.cjrequena.sample.query.handler.domain.enums.TransferServiceType;
+import com.cjrequena.sample.query.handler.domain.model.enums.TransferServiceType;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.PaxPriceEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

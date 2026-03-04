@@ -1,5 +1,6 @@
-package com.cjrequena.sample.query.handler.domain.enums;
+package com.cjrequena.sample.query.handler.domain.model.enums;
 
+import com.cjrequena.sample.query.handler.domain.exception.InvalidArgumentException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AccessLevel;
@@ -62,7 +63,7 @@ public enum TransferServiceType {
    *
    * @param type the string representation of the service type
    * @return the corresponding TransferServiceType enum value
-   * @throws IllegalArgumentException if the type is not recognized
+   * @throws InvalidArgumentException if the type is not recognized
    */
   @JsonCreator
   public static TransferServiceType from(String type) {
@@ -71,7 +72,7 @@ public enum TransferServiceType {
         return serviceType;
       }
     }
-    throw new IllegalArgumentException("Unexpected transfer service type '" + type + "'");
+    throw new InvalidArgumentException("Unexpected transfer service type '" + type + "'");
   }
 
   @JsonValue

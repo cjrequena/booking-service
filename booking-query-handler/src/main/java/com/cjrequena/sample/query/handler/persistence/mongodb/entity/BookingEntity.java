@@ -1,6 +1,6 @@
 package com.cjrequena.sample.query.handler.persistence.mongodb.entity;
 
-import com.cjrequena.sample.query.handler.domain.enums.BookingStatus;
+import com.cjrequena.sample.query.handler.domain.model.enums.BookingStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

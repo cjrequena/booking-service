@@ -1,6 +1,6 @@
 package com.cjrequena.sample.query.handler.persistence.mongodb.entity.transfer;
 
-import com.cjrequena.sample.query.handler.domain.enums.TransferType;
+import com.cjrequena.sample.query.handler.domain.model.enums.TransferType;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeDeserializer;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeSerializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
