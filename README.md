@@ -587,11 +587,7 @@ Add to `pom.xml` (already configured):
 - [Projection Synchronization Guide](PROJECTION_SYNCHRONIZATION_GUIDE.md) - **Important: Read this first!**
 - [Command Handler README](booking-command-handler/README.md)
 - [Query Handler README](booking-query-handler/README.md)
-- [Service Tests Status](booking-command-handler/SERVICE_TESTS_STATUS.md)
-- [Controller Tests Status](booking-command-handler/CONTROLLER_TESTS_STATUS.md)
-- [Hybrid Kafka Snapshot Approach](HYBRID_KAFKA_SNAPSHOT_APPROACH.md)
-- [Batch Deduplication Optimization](BATCH_DEDUPLICATION_OPTIMIZATION.md)
-- [PostgreSQL Projection Implementation Guide](POSTGRES_PROJECTION_IMPLEMENTATION_GUIDE.md)
+- [Antic AI Integration Architecture](AGENTIC_AI_BOOKING_SERVICE.md)
 
 ### API Documentation
 
