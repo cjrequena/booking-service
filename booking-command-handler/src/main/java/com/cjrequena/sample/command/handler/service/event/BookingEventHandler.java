@@ -12,12 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,24 +54,28 @@ public class BookingEventHandler extends EventHandler {
       // Here is to set the business logic to send the incoming event through an integration channel, e.g. Kafka, SNS, SQS, AWS Lambda, Webhook, etc.
       Map<String, String> headers = new HashMap<>();
       headers.put(KafkaHeaders.KEY, event.getAggregateId().toString());
-      headers.put(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON.toString());
-      headers.put("x-test-header", "header-test-001");
-      Message<Event> message = MessageBuilder.withPayload(event).copyHeaders(headers).build();
+      headers.put("ce_specversion","V1");
+      headers.put("ce_id", event.getEventId().toString());
+      headers.put("ce_type", event.getEventType());
+      headers.put("ce_source", URI.create("/booking-service").toString());
+      headers.put("ce_time",event.getTime().toString());
+      headers.put("ce_datacontenttype", MimeTypeUtils.APPLICATION_JSON.toString());
+      final Map<String, Object> extensions = event.getExtension();
+      extensions.forEach((key, value) -> {
+        try {
+          if (value == null) {
+            log.debug("Skipping null extension value for key: {}", key);
+            return;
+          }
+          headers.put(key, value.toString());
+        } catch (Exception ex) {
+          log.warn("Failed to add extension {}: {}", key, ex.getMessage());
+        }
+      });
+
+      Message<Object> message = MessageBuilder.withPayload(event.getData()).copyHeaders(headers).build();
       streamBridge.send(KAFKA_BOOKING_ORDER_OUTBOUND_CHANNEL, message);
     }
-
-    // Save or Update the projection database
-    // If you do it here, then remove the projection code from CommandBusService
-    // If you do it here, then for a new subscription this will recreate the whole projectionDB for this specific aggregate
-    //    events.parallelStream()
-    //      .map(Event::getAggregateId)
-    //      .distinct()
-    //      .forEach(aggregateId -> {
-    //        final Aggregate aggregate = retrieveOrInstantiateAggregate(aggregateId);
-    //        projectionHandlers.stream()
-    //          .filter(handler -> handler.getAggregateType().getType().equals(aggregate.getAggregateType()))
-    //          .forEach(handler -> handler.handle(aggregate));
-    //      });
 
   }
 

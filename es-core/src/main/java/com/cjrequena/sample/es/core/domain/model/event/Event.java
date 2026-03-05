@@ -51,6 +51,9 @@ public abstract class Event {
   // Metadata extensions
   protected Map<String, Object> extension;
 
+  //
+  public abstract Object getData();
+
   public AbstractEventEntity mapToEventEntity() {
     log.info("Mapping to event entity {}", this);
     return invoke();
