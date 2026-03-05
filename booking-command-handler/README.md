@@ -575,11 +575,6 @@ After running tests, reports are available at:
 
 ### Documentation Files
 
-- [Service Tests Status](SERVICE_TESTS_STATUS.md) - Detailed test results
-- [Controller Tests Status](CONTROLLER_TESTS_STATUS.md) - Exception handling tests
-- [Implementation Complete](IMPLEMENTATION_COMPLETE.md) - Implementation summary
-- [Test Success Report](TEST_SUCCESS_REPORT.md) - Test execution report
-
 ### API Documentation
 
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
