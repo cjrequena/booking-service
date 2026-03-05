@@ -1,5 +1,31 @@
 # Agentic AI on Booking Service (CQRS + Event Sourcing)
 
+## Abstract
+
+This document describes an agentic AI architecture layered on top of an existing CQRS and Event Sourcing booking service. 
+Rather than replacing the underlying system, AI agents provide a natural language interface that interprets user intent 
+and orchestrates the appropriate commands and queries. The Model Context Protocol (MCP) serves as the bridge between 
+agents and the booking service APIs, enabling agents to discover and invoke operations as tools. This approach preserves 
+the integrity of domain logic, event sourcing, and projections while adding intelligent reasoning capabilities that simplify 
+user interactions.
+
+## Overview
+
+Traditional booking systems require clients to know exactly which API endpoints to call and in what sequence. With agentic AI, 
+users express their intent in natural language, and specialized agents handle the orchestration. Two primary agents operate in 
+this architecture:
+
+- **Command Agent**: Interprets write operations (create, place, confirm, cancel bookings) and determines the correct sequence of commands to execute based on user intent.
+- **Query Agent**: Handles read operations, deciding which queries to run, combining results, and synthesizing responses to user questions.
+
+Both agents connect to their respective MCP Servers, which expose the booking-command-handler and booking-query-handler REST APIs 
+as standardized tools. 
+
+The MCP Servers can be auto-generated from the existing OpenAPI specifications, minimizing implementation effort. 
+
+The underlying CQRS architecture, event store, domain aggregates, and projections remain unchanged—agents simply provide 
+an intelligent interface layer above them.
+
 ## Architecture with AI Agents
 
 ```
