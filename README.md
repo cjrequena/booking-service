@@ -584,10 +584,11 @@ Add to `pom.xml` (already configured):
 
 ### Documentation Files
 
-- [Projection Synchronization Guide](PROJECTION_SYNCHRONIZATION_GUIDE.md) - **Important: Read this first!**
-- [Command Handler README](booking-command-handler/README.md)
+- [Command Handler README](booking-command-handler/README.md)4
 - [Query Handler README](booking-query-handler/README.md)
-- [Antic AI Integration Architecture](AGENTIC_AI_BOOKING_SERVICE.md)
+- [Projection Synchronization Guide](.docs/PROJECTION_SYNCHRONIZATION_GUIDE.md)
+- [Agentic AI Integration Architecture](.docs/AGENTIC_AI_BOOKING_SERVICE.md)
+- [BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION](.docs/BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION.md)
 
 ### API Documentation
 

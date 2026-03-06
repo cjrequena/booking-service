@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.extern.jackson.Jacksonized;
@@ -52,7 +53,7 @@ public record ProductMetadataVO(
   @NotNull(message = "Product type is required")
   ProductType productType,
 
-  @NotNull(message = "Product status is required")
+  @Valid
   ProductStatus status,
 
   @NotNull(message = "Paxes IDs are required")

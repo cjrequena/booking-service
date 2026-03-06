@@ -62,10 +62,10 @@ public class CreateBookingCommand extends Command {
   /**
    * Constructs a new PlaceBookingCommand.
    *
-   * @param paxes the list of passengers
+   * @param paxes     the list of passengers
    * @param leadPaxId the ID of the lead passenger
-   * @param products the list of products in the booking
-   * @param metadata optional metadata as JSON string
+   * @param products  the list of products in the booking
+   * @param metadata  optional metadata as JSON string
    */
   @Builder
   public CreateBookingCommand(

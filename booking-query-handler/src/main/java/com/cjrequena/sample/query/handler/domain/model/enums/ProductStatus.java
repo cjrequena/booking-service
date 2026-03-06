@@ -11,10 +11,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ProductStatus {
 
-  PLACED("PLACED"),
-  CANCELLED("CANCELLED"),
+  PENDING("PENDING"),
   ACCEPTED("ACCEPTED"),
-  COMPLETED("COMPLETED");
+  CONFIRMED("CONFIRMED"),
+  CANCELLED("CANCELLED"),
+  REJECTED("REJECTED");
 
   private final String status;
 

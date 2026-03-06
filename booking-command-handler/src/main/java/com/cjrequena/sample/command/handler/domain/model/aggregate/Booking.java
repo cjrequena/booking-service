@@ -3,6 +3,7 @@ package com.cjrequena.sample.command.handler.domain.model.aggregate;
 import com.cjrequena.sample.command.handler.domain.model.command.*;
 import com.cjrequena.sample.command.handler.domain.model.enums.AggregateType;
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
+import com.cjrequena.sample.command.handler.domain.model.enums.ProductStatus;
 import com.cjrequena.sample.command.handler.domain.model.event.*;
 import com.cjrequena.sample.command.handler.domain.model.vo.*;
 import com.cjrequena.sample.command.handler.shared.common.util.JsonUtil;
@@ -75,6 +76,13 @@ public class Booking extends Aggregate {
   // Crate Booking
   //==========================================================
   public void applyCommand(CreateBookingCommand command) throws JsonProcessingException {
+    // Map all products to PENDING status
+    List<ProductVO> pendingProducts = command
+      .getProducts()
+      .stream()
+      .map(product -> product.withStatus(ProductStatus.PENDING))
+      .toList();
+
     final BookingCreatedEventDataVO data = BookingCreatedEventDataVO
       .builder()
       .bookingId(command.getAggregateId())
@@ -82,7 +90,7 @@ public class Booking extends Aggregate {
       .status(BookingStatus.CREATED)
       .paxes(command.getPaxes())
       .leadPaxId(command.getLeadPaxId())
-      .products(command.getProducts())
+      .products(pendingProducts)
       .metadata(command.getMetadata())
       .build();
 
@@ -107,43 +115,6 @@ public class Booking extends Aggregate {
     this.leadPaxId = event.getData().leadPaxId();
     this.products = event.getData().products();
     this.metadata = event.getData().metadata();
-  }
-
-  //==========================================================
-  // Place Booking
-  //==========================================================
-  
-  public void applyCommand(PlaceBookingCommand command) throws JsonProcessingException {
-    final BookingPlacedEventDataVO data = BookingPlacedEventDataVO
-      .builder()
-      .bookingId(command.getAggregateId())
-      .bookingReference(command.getBookingReference())
-      .status(BookingStatus.PLACED)
-      .paxes(command.getPaxes())
-      .leadPaxId(command.getLeadPaxId())
-      .products(command.getProducts())
-      .build();
-
-    applyUnconfirmedEvent(BookingPlacedEvent
-        .builder()
-        .eventId(java.util.UUID.randomUUID())
-        .aggregateId(command.getAggregateId())
-        .aggregateVersion(getNextAggregateVersion())
-        .dataContentType(MediaType.APPLICATION_JSON_VALUE)
-        .data(data)
-        .dataBase64(JsonUtil.objectToJsonBase64(data))
-        .dataSchema(null)
-        .extension(null)
-      .build());
-  }
-
-  public void applyEvent(BookingPlacedEvent event) {
-    this.bookingId = event.getData().bookingId();
-    this.bookingReference = event.getData().bookingReference();
-    this.status = event.getData().status();
-    this.paxes = event.getData().paxes();
-    this.leadPaxId = event.getData().leadPaxId();
-    this.products = event.getData().products();
   }
 
   //==========================================================

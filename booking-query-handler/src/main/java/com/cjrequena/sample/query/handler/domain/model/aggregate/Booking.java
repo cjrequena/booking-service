@@ -82,18 +82,6 @@ public class Booking extends Aggregate {
   }
 
   //==========================================================
-  // Place Booking
-  //==========================================================
-  public void applyEvent(BookingPlacedEvent event) {
-    this.bookingId = event.getData().bookingId();
-    this.bookingReference = event.getData().bookingReference();
-    this.status = event.getData().status();
-    this.paxes = event.getData().paxes();
-    this.leadPaxId = event.getData().leadPaxId();
-    this.products = event.getData().products();
-  }
-
-  //==========================================================
   // Confirm Booking
   //==========================================================
   public void applyEvent(BookingConfirmedEvent event) {

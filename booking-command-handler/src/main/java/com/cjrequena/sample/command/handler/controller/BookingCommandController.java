@@ -50,38 +50,6 @@ public class BookingCommandController {
   private final CommandMapper commandMapper;
 
   @Operation(
-    summary = "Place a new booking",
-    description = "Initiates a new booking in PLACED status. This is the first step in the booking lifecycle.",
-    parameters = {
-      @Parameter(
-        name = "Accept-Version",
-        required = true,
-        in = ParameterIn.HEADER,
-        schema = @Schema(type = "string", allowableValues = {Constant.VND_BOOKING_COMMAND_HANDLER_V1})
-      )
-    }
-  )
-  @ApiResponses(
-    value = {
-      @ApiResponse(
-        responseCode = "201",
-        description = "Booking successfully placed",
-        content = @Content(mediaType = APPLICATION_JSON_VALUE, schema = @Schema(implementation = CommandResponseDTO.class))
-      ),
-      @ApiResponse(responseCode = "400", description = "Invalid request data or business rule violation"),
-      @ApiResponse(responseCode = "409", description = "Optimistic concurrency conflict"),
-      @ApiResponse(responseCode = "500", description = "Internal server error"),
-      @ApiResponse(responseCode = "501", description = "Command handler not implemented")
-    }
-  )
-  @PostMapping(path = "/place", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> place(@Valid @RequestBody PlaceBookingCommandDTO dto) {
-    log.info("Placing new booking");
-    Command command = commandMapper.toCommand(dto);
-    return handleCommand(command, HttpStatus.CREATED);
-  }
-
-  @Operation(
     summary = "Create a booking",
     description = "Creates a new booking. Alternative to place operation with different business semantics.",
     parameters = {

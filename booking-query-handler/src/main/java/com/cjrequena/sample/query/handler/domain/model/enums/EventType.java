@@ -15,21 +15,11 @@ import lombok.RequiredArgsConstructor;
 public enum EventType {
 
   BOOKING_CREATED_EVENT(BookingCreatedEvent.class, BookingCreatedEvent.class.getSimpleName()),
-  BOOKING_PLACED_EVENT(BookingPlacedEvent.class, BookingPlacedEvent.class.getSimpleName()),
   BOOKING_CONFIRMED_EVENT(BookingConfirmedEvent.class, BookingConfirmedEvent.class.getSimpleName()),
   BOOKING_CANCELLED_EVENT(BookingCancelledEvent.class, BookingCancelledEvent.class.getSimpleName()),
   BOOKING_COMPLETED_EVENT(BookingCompletedEvent.class, BookingCompletedEvent.class.getSimpleName()),
   BOOKING_EXPIRED_EVENT(BookingExpiredEvent.class, BookingExpiredEvent.class.getSimpleName());
   // ==
-//  BOOKING_ORDER_PLACED_EVENT(BookingOrderPlacedEvent.class, BookingOrderPlacedEvent.class.getName()),
-//  BOOKING_ORDER_CANCELLED_EVENT(BookingOrderCancelledEvent.class, BookingOrderCancelledEvent.class.getName()),
-//  PRODUCT_BOOKING_ORDER_CANCELLED_EVENT(BookingOrderProductCancelledEvent.class, BookingOrderProductCancelledEvent.class.getName()),
-//  BOOKING_ORDER_COMPLETED_EVENT(BookingOrderCompletedEvent.class, BookingOrderCompletedEvent.class.getName()),
-//  BOOKING_ORDER_ACCEPTED_EVENT(BookingOrderAcceptedEvent.class, BookingOrderAcceptedEvent.class.getName()),
-//  BOOKING_ORDER_PAYMENT_INITIATED_EVENT(BookingOrderPaymentInitiatedEvent.class, BookingOrderPaymentInitiatedEvent.class.getName()),
-//  BOOKING_ORDER_PAYMENT_CONFIRMED_EVENT(BookingOrderPaymentConfirmedEvent.class, BookingOrderPaymentConfirmedEvent.class.getName());
-
-
   private final Class<? extends Event> clazz;
   private final String type;
 

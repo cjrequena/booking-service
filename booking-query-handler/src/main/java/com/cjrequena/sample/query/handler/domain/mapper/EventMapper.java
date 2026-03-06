@@ -27,55 +27,6 @@ public interface EventMapper {
   // ================================================================
 
   // ================================================================
-  // BookingPlacedEvent
-  // ================================================================
-  @Mapping(target = "dataContentType", constant = "application/json")
-  @Mapping(target = "data", ignore = true)
-  @Mapping(target = "eventId", ignore = true)
-  @Mapping(target = "extension", ignore = true)
-  @Mapping(target = "offsetId", ignore = true)
-  @Mapping(target = "offsetTxId", ignore = true)
-  @Mapping(target = "time", ignore = true)
-  EventEntity bookingPlacedEventToEventEntity(BookingPlacedEvent event);
-
-  /** Serializes {@link BookingPlacedEvent#getData()} to JSON and sets it on the entity. */
-  @AfterMapping
-  default void populateEntityFields(BookingPlacedEvent event, @MappingTarget EventEntity entity) {
-    if (event == null) {
-      return;
-    }
-    try {
-      entity.setData(JsonUtil.objectToJsonString(event.getData()));
-    } catch (Exception e) {
-      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
-    }
-    try {
-      entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
-    } catch (Exception e) {
-      throw new MapperException("Failed to serialize EventExtension to JSON", e);
-    }
-  }
-
-  @Mapping(target = "data", expression = "java(deserializeDataToBookingPlacedEventDataVO(entity.getData()))")
-  @Mapping(target = "extension", expression = "java(deserializeEventExtension(entity.getExtension()))")
-  BookingPlacedEvent eventEntityToBookingPlacedEvent(EventEntity entity);
-
-  /**
-   * Deserializes the raw JSON string stored in {@link EventEntity#getData()} into a typed
-   * {@link BookingPlacedEventDataVO}.
-   *
-   * @param json the JSON string to deserialize
-   * @return the deserialized data value object
-   */
-  default BookingPlacedEventDataVO deserializeDataToBookingPlacedEventDataVO(String json) {
-    try {
-      return JsonUtil.jsonStringToObject(json, BookingPlacedEventDataVO.class);
-    } catch (Exception e) {
-      throw new MapperException("Failed to deserialize EventEntity data to BookingPlacedEventDataVO", e);
-    }
-  }
-
-  // ================================================================
   // BookingCreatedEvent
   // ================================================================
   @Mapping(target = "dataContentType", constant = "application/json")
@@ -347,8 +298,6 @@ public interface EventMapper {
   default Event toEvent(EventEntity eventEntity) {
     // Assuming EventEntity has a type field or some kind of discriminator
     switch (eventEntity.getEventType()) {
-      case "BookingPlacedEvent":
-        return eventEntityToBookingPlacedEvent(eventEntity);
       case "BookingCreatedEvent":
         return eventEntityToBookingCreatedEvent(eventEntity);
       case "BookingConfirmedEvent":

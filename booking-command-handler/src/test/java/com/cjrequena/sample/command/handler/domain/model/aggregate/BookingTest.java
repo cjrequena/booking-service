@@ -129,52 +129,12 @@ class BookingTest extends TestBase {
     assertEquals(products, booking.getProducts());
   }
 
-  @Test
-  @DisplayName("Should apply PlaceBookingCommand and generate BookingPlacedEvent")
-  void shouldApplyPlaceBookingCommand() throws JsonProcessingException {
-    Booking booking = createBookingWithCreatedStatus();
 
-    PlaceBookingCommand command = PlaceBookingCommand.builder()
-      .paxes(paxes)
-      .leadPaxId(leadPaxId)
-      .products(products)
-      .build();
-
-    booking.applyCommand(command);
-
-    assertEquals(1, booking.getUnconfirmedEventsPool().size());
-    assertTrue(booking.getUnconfirmedEventsPool().get(0) instanceof BookingPlacedEvent);
-  }
-
-  @Test
-  @DisplayName("Should apply BookingPlacedEvent and update status to PLACED")
-  void shouldApplyBookingPlacedEvent() {
-    Booking booking = createBookingWithCreatedStatus();
-
-    BookingPlacedEvent event = BookingPlacedEvent.builder()
-      .eventId(UUID.randomUUID())
-      .aggregateId(aggregateId)
-      .aggregateVersion(2L)
-      .dataContentType("application/json")
-      .data(BookingPlacedEventDataVO.builder()
-        .bookingId(aggregateId)
-        .bookingReference(bookingReference)
-        .status(BookingStatus.PLACED)
-        .paxes(paxes)
-        .leadPaxId(leadPaxId)
-        .products(products)
-        .build())
-      .build();
-
-    booking.applyEvent(event);
-
-    assertEquals(BookingStatus.PLACED, booking.getStatus());
-  }
 
   @Test
   @DisplayName("Should apply ConfirmBookingCommand and generate BookingConfirmedEvent")
   void shouldApplyConfirmBookingCommand() throws JsonProcessingException {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     ConfirmBookingCommand command = ConfirmBookingCommand.builder()
       .bookingId(aggregateId)
@@ -189,7 +149,7 @@ class BookingTest extends TestBase {
   @Test
   @DisplayName("Should apply BookingConfirmedEvent and update status to CONFIRMED")
   void shouldApplyBookingConfirmedEvent() {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     BookingConfirmedEvent event = BookingConfirmedEvent.builder()
       .eventId(UUID.randomUUID())
@@ -211,7 +171,7 @@ class BookingTest extends TestBase {
   @Test
   @DisplayName("Should apply CancelBookingCommand and generate BookingCancelledEvent")
   void shouldApplyCancelBookingCommand() throws JsonProcessingException {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     CancelBookingCommand command = CancelBookingCommand.builder()
       .bookingId(aggregateId)
@@ -226,7 +186,7 @@ class BookingTest extends TestBase {
   @Test
   @DisplayName("Should apply BookingCancelledEvent and update status to CANCELLED")
   void shouldApplyBookingCancelledEvent() {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     BookingCancelledEvent event = BookingCancelledEvent.builder()
       .eventId(UUID.randomUUID())
@@ -285,7 +245,7 @@ class BookingTest extends TestBase {
   @Test
   @DisplayName("Should apply ExpireBookingCommand and generate BookingExpiredEvent")
   void shouldApplyExpireBookingCommand() throws JsonProcessingException {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     ExpireBookingCommand command = ExpireBookingCommand.builder()
       .bookingId(aggregateId)
@@ -300,7 +260,7 @@ class BookingTest extends TestBase {
   @Test
   @DisplayName("Should apply BookingExpiredEvent and update status to EXPIRED")
   void shouldApplyBookingExpiredEvent() {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     BookingExpiredEvent event = BookingExpiredEvent.builder()
       .eventId(UUID.randomUUID())
@@ -360,31 +320,8 @@ class BookingTest extends TestBase {
     return booking;
   }
 
-  private Booking createBookingWithPlacedStatus() {
-    Booking booking = createBookingWithCreatedStatus();
-
-    BookingPlacedEvent event = BookingPlacedEvent.builder()
-      .eventId(UUID.randomUUID())
-      .aggregateId(aggregateId)
-      .aggregateVersion(2L)
-      .dataContentType("application/json")
-      .data(BookingPlacedEventDataVO.builder()
-        .bookingId(aggregateId)
-        .bookingReference(bookingReference)
-        .status(BookingStatus.PLACED)
-        .paxes(paxes)
-        .leadPaxId(leadPaxId)
-        .products(products)
-        .build())
-      .build();
-
-    booking.applyEvent(event);
-    booking.markUnconfirmedEventsAsConfirmed();
-    return booking;
-  }
-
   private Booking createBookingWithConfirmedStatus() {
-    Booking booking = createBookingWithPlacedStatus();
+    Booking booking = createBookingWithCreatedStatus();
 
     BookingConfirmedEvent event = BookingConfirmedEvent.builder()
       .eventId(UUID.randomUUID())
