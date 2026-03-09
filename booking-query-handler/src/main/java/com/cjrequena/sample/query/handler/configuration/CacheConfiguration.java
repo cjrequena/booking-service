@@ -6,6 +6,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +28,12 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 public class CacheConfiguration {
+
+  @Bean
+  @Primary
+  public CacheManager redisCacheManager(RedisConnectionFactory factory) {
+    return RedisCacheManager.builder(factory).build();
+  }
 
   /**
    * Configures the cache manager with Caffeine.

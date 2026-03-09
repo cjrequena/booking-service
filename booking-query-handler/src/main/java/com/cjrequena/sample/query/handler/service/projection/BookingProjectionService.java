@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -70,6 +71,7 @@ public class BookingProjectionService {
    * @return the saved booking entity
    * @throws BookingProjectionException if save fails
    */
+  @CachePut(value = "bookings", key = "#aggregate.bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
   public BookingEntity save(@Valid @NotNull Booking aggregate) {
 
     log.info("Saving Booking Aggregate to MongoDB ProjectionDB: bookingId={}", aggregate.getBookingId());
@@ -130,6 +132,7 @@ public class BookingProjectionService {
    * @param aggregate the booking aggregate to save
    * @return Mono containing the saved booking entity
    */
+  @CachePut(value = "bookings", key = "#aggregate.bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
   public Mono<BookingEntity> saveReactive(@Valid @NotNull Booking aggregate) {
 
     log.info("Saving Booking Aggregate to MongoDB ProjectionDB (reactive): bookingId={}", aggregate.getBookingId());
@@ -185,7 +188,7 @@ public class BookingProjectionService {
    * @return Mono containing the booking entity
    * @throws BookingNotFoundException if booking not found
    */
-  @Cacheable(value = "bookings", key = "#bookingId", cacheManager = "caffeineCacheManager")
+  @Cacheable(value = "bookings", key = "#bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
   public Mono<BookingEntity> retrieveById(UUID bookingId) {
     log.debug("Retrieving booking from database (cache miss): {}", bookingId);
     return bookingProjectionRepository
@@ -217,7 +220,7 @@ public class BookingProjectionService {
    *
    * @param bookingId the booking ID to evict from cache
    */
-  @CacheEvict(value = "bookings", key = "#bookingId", cacheManager = "caffeineCacheManager")
+  @CacheEvict(value = "bookings", key = "#bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
   public void evictBookingCache(UUID bookingId) {
     log.debug("Evicting booking from cache: {}", bookingId);
   }
@@ -229,7 +232,7 @@ public class BookingProjectionService {
    * or when bulk updates occur.
    * </p>
    */
-  @CacheEvict(value = "bookings", allEntries = true, cacheManager = "caffeineCacheManager")
+  @CacheEvict(value = "bookings", allEntries = true, cacheNames = "bookings", cacheManager = "redisCacheManager")
   public void evictAllBookingsCache() {
     log.debug("Evicting all bookings from cache");
   }

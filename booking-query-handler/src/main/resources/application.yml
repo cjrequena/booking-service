@@ -114,6 +114,39 @@ spring.data.mongodb:
 projections.handlers.enabled: true
 
 # ----------------------------------------
+# Redis - Enhanced Configuration
+# ----------------------------------------
+spring.redis:
+  host: localhost
+  port: 6379
+  password: # Leave empty for no password
+  ssl: false
+  timeout: 10000  # 10 seconds
+  database: 0
+  # Connection Pooling Configuration
+  lettuce:
+    pool:
+      max-active: 8      # Maximum number of connections
+      max-idle: 8        # Maximum idle connections
+      min-idle: 2        # Minimum idle connections
+      max-wait: 5000     # Maximum wait time in ms
+    shutdown-timeout: 100  # Shutdown timeout in ms
+  # Uncomment for Cluster mode
+  #cluster:
+  #  nodes:
+  #    - 127.0.0.1:7000
+  #    - 127.0.0.1:7001
+  #    - 127.0.0.1:7002
+  #  max-redirects: 3
+  # Uncomment for Sentinel mode
+  #sentinel:
+  #  master: mymaster
+  #  nodes:
+  #    - 127.0.0.1:26379
+  #    - 127.0.0.1:26380
+  #    - 127.0.0.1:26381
+
+# ----------------------------------------
 # springdoc :: swagger configuration
 # ----------------------------------------
 springdoc:
