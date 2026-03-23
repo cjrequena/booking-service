@@ -41,8 +41,7 @@ class BookingCommandHandlerIT {
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"))
     .withDatabaseName("eventstore")
     .withUsername("postgres")
-    .withPassword("postgres")
-    .withInitScript("init-eventstore.sql");
+    .withPassword("postgres");
 
   @Container
   static MongoDBContainer mongo = new MongoDBContainer(DockerImageName.parse("mongo:latest"));

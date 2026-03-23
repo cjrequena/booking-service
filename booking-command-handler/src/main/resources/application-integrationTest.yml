@@ -55,7 +55,9 @@ eventstore:
 # Flyway
 # ----------------------------------------
 spring.flyway:
-  enabled: false
+  enabled: true
+  baseline-on-migrate: true
+  locations: classpath:/db/migration
 
 # ----------------------------------------
 # Spring Cloud Stream (Kafka - overridden by Testcontainers)
