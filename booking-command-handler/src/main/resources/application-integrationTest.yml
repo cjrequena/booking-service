@@ -1,0 +1,107 @@
+# ----------------------------------------
+# INTEGRATION TEST PROFILE
+# ----------------------------------------
+server.servlet.context-path: /
+server.port: 0
+
+spring.application.name: booking-command-handler-it
+spring.main.allow-bean-definition-overriding: true
+
+spring.config.import: "optional:configserver:"
+spring.cloud.config.enabled: false
+
+spring.web.resources.add-mappings: true
+
+# ----------------------------------------
+# EventStore DataSource (overridden by Testcontainers)
+# ----------------------------------------
+spring:
+  datasource:
+    eventstore:
+      type: com.zaxxer.hikari.HikariDataSource
+      driver-class-name: org.postgresql.Driver
+      testOnBorrow: true
+      validationQuery: SELECT 1
+      pool-name: EventStoreHikariPool
+      connection-timeout: 20000
+      minimum-idle: 2
+      maximum-pool-size: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: false
+      jpa:
+        open-in-view: false
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.PostgreSQLDialect
+            show_sql: false
+
+# ----------------------------------------
+# Projections
+# ----------------------------------------
+projections.handlers.enabled: false
+
+# ----------------------------------------
+# Event store
+# ----------------------------------------
+eventstore:
+  snapshot:
+    Booking:
+      enabled: false
+  subscription:
+    enabled: false
+
+# ----------------------------------------
+# Flyway
+# ----------------------------------------
+spring.flyway:
+  enabled: false
+
+# ----------------------------------------
+# Spring Cloud Stream (Kafka - overridden by Testcontainers)
+# ----------------------------------------
+spring.cloud.stream:
+  defaultBinder: my-kafka-binder-01
+  default:
+    content-type: application/json
+  bindings:
+    event-booking-out-0:
+      binder: my-kafka-binder-01
+      destination: event-booking-01
+      content-type: application/json
+      producer:
+        headerMode: headers
+        useNativeEncoding: true
+  binders:
+    my-kafka-binder-01:
+      type: kafka
+      environment:
+        spring.cloud.stream.kafka.binder:
+          brokers: "localhost:9092"
+        spring.cloud.stream.kafka.bindings:
+          event-booking-out-0:
+            producer:
+              configuration:
+                key.serializer: org.apache.kafka.common.serialization.StringSerializer
+                value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+spring.cloud.sleuth:
+  json:
+    enabled: false
+
+# ----------------------------------------
+# Logging
+# ----------------------------------------
+logging.level:
+  org.springframework: WARN
+  org.flywaydb: WARN
+  com.zaxxer.hikari: WARN
+  com.cjrequena: INFO
+  org.testcontainers: INFO
+
+spring.jackson:
+  property-naming-strategy: SNAKE_CASE
+
+springdoc:
+  api-docs.enabled: false
+  swagger-ui.enabled: false

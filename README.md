@@ -448,14 +448,14 @@ curl http://localhost:8080/actuator/health
 curl http://localhost:8081/actuator/health
 ```
 
-**Create a Booking:**
+**Create a Booking (Transfer + Hotel):**
 ```bash
 curl -X POST http://localhost:8080/command-handler/api/bookings/create \
-  -H "Accept-Version: application/vnd.booking-command-handler.v1+json" \
+  -H "Accept-Version: application/vnd.booking-command-handler.v1" \
   -H "Content-Type: application/json" \
   -d '{
     "paxes": [{
-      "pax_id": "123e4567-e89b-12d3-a456-426614174000",
+      "pax_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "first_name": "John",
       "last_name": "Doe",
       "email": "john@example.com",
@@ -465,25 +465,51 @@ curl -X POST http://localhost:8080/command-handler/api/bookings/create \
       "document_number": "AB123456",
       "pax_type": "ADULT"
     }],
-    "lead_pax_id": "123e4567-e89b-12d3-a456-426614174000",
-    "products": [{
-      "product_id": "prod-001",
-      "product_name": "Flight Ticket",
-      "product_type": "FLIGHT",
-      "price": 299.99,
-      "currency": "USD"
-    }],
-    "metadata": {
-      "source": "web",
-      "channel": "direct"
-    }
+    "lead_pax_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "products": [
+      {
+        "product_type": "Transfer",
+        "product_id": "11111111-1111-1111-1111-111111111111",
+        "search_id": "aaaa1111-bbbb-cccc-dddd-eeee11111111",
+        "search_created_at": "2026-06-01T08:00:00.000+00:00",
+        "paxes_ids": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"],
+        "origin": { "latitude": 39.55, "longitude": 2.73, "iata_code": "PMI", "full_address": "Palma Airport" },
+        "destination": { "latitude": 39.69, "longitude": 3.01, "full_address": "Hotel Grand Mallorca" },
+        "outbound_trip": {
+          "trip_id": "aa000001-0001-0001-0001-000000000001",
+          "pickup_datetime": "2026-06-15T10:30:00.000+00:00",
+          "transfer_type": "ONE_WAY",
+          "vehicle": {
+            "vehicle_id": "bb000001-0001-0001-0001-000000000001",
+            "type": "SEDAN", "description": "Mercedes E-Class", "model": "Mercedes E-Class",
+            "capacity": 4, "max_bags": 3, "max_paxes": 3
+          }
+        },
+        "price": { "service_type": "PRIVATE", "currency": "EUR", "total_amount": 65.00, "subtotal_amount": 55.00, "fees_and_taxes": 10.00 }
+      },
+      {
+        "product_type": "Hotel",
+        "product_id": "22222222-2222-2222-2222-222222222222",
+        "search_id": "aaaa1111-bbbb-cccc-dddd-eeee11111111",
+        "search_created_at": "2026-06-01T08:00:00.000+00:00",
+        "paxes_ids": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"],
+        "hotel_name": "Hotel Grand Mallorca",
+        "hotel_code": "HGM-001",
+        "location": { "latitude": 39.69, "longitude": 3.01, "full_address": "Av. de Sa Coma 12, Cala Millor" },
+        "check_in": "2026-06-15T14:00:00.000+00:00",
+        "check_out": "2026-06-20T11:00:00.000+00:00",
+        "rooms": [{ "room_id": "cc000001-0001-0001-0001-000000000001", "room_type": "DOUBLE_SEA_VIEW", "room_description": "Double room with sea view", "quantity": 1, "max_occupancy": 2 }],
+        "price": { "currency": "EUR", "total_amount": 875.00, "subtotal_amount": 750.00, "fees_and_taxes": 125.00, "nightly_rate": 150.00, "nights": 5 }
+      }
+    ],
+    "metadata": { "source": "web", "channel": "direct" }
   }'
 ```
 
 **Query a Booking:**
 ```bash
 curl http://localhost:8081/query-handler/api/bookings/{bookingId} \
-  -H "Accept-Version: application/vnd.booking-query-handler.v1+json"
+  -H "Accept-Version: application/vnd.booking-query-handler.v1"
 ```
 
 ---
@@ -555,7 +581,7 @@ Add to `pom.xml` (already configured):
 
 **Base URL:** `http://localhost:8080/command-handler/api/bookings`
 
-**Header Required:** `Accept-Version: application/vnd.booking-command-handler.v1+json`
+**Header Required:** `Accept-Version: application/vnd.booking-command-handler.v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -570,7 +596,7 @@ Add to `pom.xml` (already configured):
 
 **Base URL:** `http://localhost:8081/query-handler/api/bookings`
 
-**Header Required:** `Accept-Version: application/vnd.booking-query-handler.v1+json`
+**Header Required:** `Accept-Version: application/vnd.booking-query-handler.v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -584,7 +610,8 @@ Add to `pom.xml` (already configured):
 
 ### Documentation Files
 
-- [Command Handler README](booking-command-handler/README.md)4
+- [Command Handler README](booking-command-handler/README.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [Query Handler README](booking-query-handler/README.md)
 - [Projection Synchronization Guide](.docs/PROJECTION_SYNCHRONIZATION_GUIDE.md)
 - [Agentic AI Integration Architecture](.docs/AGENTIC_AI_BOOKING_SERVICE.md)

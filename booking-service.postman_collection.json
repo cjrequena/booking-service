@@ -22,7 +22,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Bob\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"bob.johnson@example.com\",\n      \"phone\": \"+34987654321\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"status\": \"PLACED\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"outbound_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"ONE_WAY\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SEDAN\",\n          \"description\": \"Comfortable sedan for up to 4 passengers\",\n          \"model\": \"Mercedes E-Class\",\n          \"image\": \"https://example.com/images/mercedes-e-class.jpg\",\n          \"capacity\": 4,\n          \"max_bags\": 3,\n          \"max_paxes\": 4\n        }\n      },\n      \"inbound_trip\": null,\n      \"price\": {\n        \"service_type\": \"PRIVATE\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 65.00,\n        \"subtotal_amount\": 55.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": null\n      }\n    }\n  ],\n  \"metadata\": {\n    \"source\": \"web-app\",\n    \"user_id\": \"user-789\",\n    \"channel\": \"B2B\",\n    \"tags\": [\"corporate\", \"bulk-booking\"]\n  }\n}",
+          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Bob\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"bob.johnson@example.com\",\n      \"phone\": \"+34987654321\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"outbound_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"ONE_WAY\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SEDAN\",\n          \"description\": \"Comfortable sedan for up to 4 passengers\",\n          \"model\": \"Mercedes E-Class\",\n          \"image\": \"https://example.com/images/mercedes-e-class.jpg\",\n          \"capacity\": 4,\n          \"max_bags\": 3,\n          \"max_paxes\": 4\n        }\n      },\n      \"inbound_trip\": null,\n      \"price\": {\n        \"service_type\": \"PRIVATE\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 65.00,\n        \"subtotal_amount\": 55.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": null\n      }\n    }\n  ],\n  \"metadata\": {\n    \"source\": \"web-app\",\n    \"user_id\": \"user-789\",\n    \"channel\": \"B2B\",\n    \"tags\": [\"corporate\", \"bulk-booking\"]\n  }\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -62,7 +62,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Emma\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"emma.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"first_name\": \"Oliver\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 2,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB345678\",\n      \"pax_type\": \"INFANT\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"status\": \"PLACED\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\",\n        \"550e8400-e29b-41d4-a716-446655440003\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"outbound_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"OUTBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"inbound_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440031\",\n        \"pickup_datetime\": \"2026-03-22T10:00:00Z\",\n        \"transfer_type\": \"INBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"price\": {\n        \"service_type\": \"SHARED\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 60.00,\n        \"subtotal_amount\": 50.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": [\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n            \"currency\": \"EUR\",\n            \"amount\": 30.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n            \"currency\": \"EUR\",\n            \"amount\": 20.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n            \"currency\": \"EUR\",\n            \"amount\": 0.00\n          }\n        ]\n      }\n    }\n  ],\n    \"metadata\": {\n    \"source\": \"web-app\",\n    \"user_id\": \"user-789\",\n    \"channel\": \"B2B\",\n    \"tags\": [\"corporate\", \"bulk-booking\"]\n  }\n}",
+          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Emma\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"emma.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"first_name\": \"Oliver\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 2,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB345678\",\n      \"pax_type\": \"INFANT\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\",\n        \"550e8400-e29b-41d4-a716-446655440003\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"outbound_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"OUTBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"return_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440031\",\n        \"pickup_datetime\": \"2026-03-22T10:00:00Z\",\n        \"transfer_type\": \"INBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"price\": {\n        \"service_type\": \"SHARED\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 60.00,\n        \"subtotal_amount\": 50.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": [\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n            \"currency\": \"EUR\",\n            \"amount\": 30.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n            \"currency\": \"EUR\",\n            \"amount\": 20.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n            \"currency\": \"EUR\",\n            \"amount\": 0.00\n          }\n        ]\n      }\n    }\n  ],\n    \"metadata\": {\n    \"source\": \"web-app\",\n    \"user_id\": \"user-789\",\n    \"channel\": \"B2B\",\n    \"tags\": [\"corporate\", \"bulk-booking\"]\n  }\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -87,7 +87,7 @@
       "response": []
     },
     {
-      "name": "command :: place :: Private One-Way Transfer",
+      "name": "command :: create :: One-Way Private Transfer and Hotel",
       "request": {
         "method": "POST",
         "header": [
@@ -102,7 +102,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Bob\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"bob.johnson@example.com\",\n      \"phone\": \"+34987654321\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"status\": \"PLACED\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"departure_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"ONE_WAY\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SEDAN\",\n          \"description\": \"Comfortable sedan for up to 4 passengers\",\n          \"model\": \"Mercedes E-Class\",\n          \"image\": \"https://example.com/images/mercedes-e-class.jpg\",\n          \"capacity\": 4,\n          \"max_bags\": 3,\n          \"max_paxes\": 4\n        }\n      },\n      \"return_trip\": null,\n      \"price\": {\n        \"service_type\": \"PRIVATE\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 65.00,\n        \"subtotal_amount\": 55.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": null\n      }\n    }\n  ]\n}",
+          "raw": "{\n    \"paxes\": [\n      {\n        \"pax_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"first_name\": \"John\",\n        \"last_name\": \"Doe\",\n        \"email\": \"john.doe@example.com\",\n        \"phone\": \"+34600000000\",\n        \"age\": 35,\n        \"document_type\": \"PASSPORT\",\n        \"document_number\": \"AB123456\",\n        \"pax_type\": \"ADULT\"\n      }\n    ],\n    \"lead_pax_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"products\": [\n      {\n        \"product_type\": \"Transfer\",\n        \"product_id\": \"11111111-1111-1111-1111-111111111111\",\n        \"search_id\": \"aaaa1111-bbbb-cccc-dddd-eeee11111111\",\n        \"search_created_at\": \"2026-06-01T08:00:00.000+00:00\",\n        \"paxes_ids\": [\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"],\n        \"origin\": {\n          \"latitude\": 39.5517,\n          \"longitude\": 2.7388,\n          \"iata_code\": \"PMI\",\n          \"full_address\": \"Palma de Mallorca Airport\"\n        },\n        \"destination\": {\n          \"latitude\": 39.6953,\n          \"longitude\": 3.0176,\n          \"full_address\": \"Hotel Grand Mallorca, Cala Millor\"\n        },\n        \"outbound_trip\": {\n          \"trip_id\": \"aa000001-0001-0001-0001-000000000001\",\n          \"pickup_datetime\": \"2026-06-15T10:30:00.000+00:00\",\n          \"transfer_type\": \"ONE_WAY\",\n          \"vehicle\": {\n            \"vehicle_id\": \"bb000001-0001-0001-0001-000000000001\",\n            \"type\": \"SEDAN\",\n            \"description\": \"Mercedes E-Class\",\n            \"model\": \"Mercedes E-Class\",\n            \"capacity\": 4,\n            \"max_bags\": 3,\n            \"max_paxes\": 3\n          }\n        },\n        \"price\": {\n          \"service_type\": \"PRIVATE\",\n          \"currency\": \"EUR\",\n          \"total_amount\": 65.00,\n          \"subtotal_amount\": 55.00,\n          \"fees_and_taxes\": 10.00\n        }\n      },\n      {\n        \"product_type\": \"Hotel\",\n        \"product_id\": \"22222222-2222-2222-2222-222222222222\",\n        \"search_id\": \"aaaa1111-bbbb-cccc-dddd-eeee11111111\",\n        \"search_created_at\": \"2026-06-01T08:00:00.000+00:00\",\n        \"paxes_ids\": [\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"],\n        \"hotel_name\": \"Hotel Grand Mallorca\",\n        \"hotel_code\": \"HGM-001\",\n        \"location\": {\n          \"latitude\": 39.6953,\n          \"longitude\": 3.0176,\n          \"full_address\": \"Av. de Sa Coma 12, Cala Millor\"\n        },\n        \"check_in\": \"2026-06-15T14:00:00.000+00:00\",\n        \"check_out\": \"2026-06-20T11:00:00.000+00:00\",\n        \"rooms\": [\n          {\n            \"room_id\": \"cc000001-0001-0001-0001-000000000001\",\n            \"room_type\": \"DOUBLE_SEA_VIEW\",\n            \"room_description\": \"Double room with sea view\",\n            \"quantity\": 1,\n            \"max_occupancy\": 2\n          }\n        ],\n        \"price\": {\n          \"currency\": \"EUR\",\n          \"total_amount\": 875.00,\n          \"subtotal_amount\": 750.00,\n          \"fees_and_taxes\": 125.00,\n          \"nightly_rate\": 150.00,\n          \"nights\": 5\n        }\n      }\n    ],\n    \"metadata\": {\"source\": \"web\"}\n  }",
           "options": {
             "raw": {
               "language": "json"
@@ -110,7 +110,7 @@
           }
         },
         "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/place",
+          "raw": "http://localhost:8080/command-handler/api/bookings/create",
           "protocol": "http",
           "host": [
             "localhost"
@@ -120,47 +120,7 @@
             "command-handler",
             "api",
             "bookings",
-            "place"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "command :: place :: Shared Transfer (Round-Trip)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Accept-Version",
-            "value": "application/vnd.booking-command-handler.v1"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"paxes\": [\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"first_name\": \"Alice\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 33,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB123456\",\n      \"pax_type\": \"ADULT\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"first_name\": \"Emma\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"emma.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 8,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB789012\",\n      \"pax_type\": \"CHILD\"\n    },\n    {\n      \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"first_name\": \"Oliver\",\n      \"last_name\": \"Johnson\",\n      \"email\": \"alice.johnson@example.com\",\n      \"phone\": \"+34123456789\",\n      \"age\": 2,\n      \"document_type\": \"PASSPORT\",\n      \"document_number\": \"AB345678\",\n      \"pax_type\": \"INFANT\"\n    }\n  ],\n  \"lead_pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"products\": [\n    {\n      \"product_id\": \"650e8400-e29b-41d4-a716-446655440010\",\n      \"search_id\": \"750e8400-e29b-41d4-a716-446655440020\",\n      \"search_created_at\": \"2026-02-25T10:00:00Z\",\n      \"product_type\": \"Transfer\",\n      \"status\": \"PLACED\",\n      \"paxes_ids\": [\n        \"550e8400-e29b-41d4-a716-446655440001\",\n        \"550e8400-e29b-41d4-a716-446655440002\",\n        \"550e8400-e29b-41d4-a716-446655440003\"\n      ],\n      \"hash\": \"abc123def456\",\n      \"origin\": {\n        \"latitude\": 39.5696,\n        \"longitude\": 2.6502,\n        \"iata_code\": \"PMI\",\n        \"icao_code\": \"LEPA\",\n        \"area_code\": \"PMI\",\n        \"full_address\": \"Palma de Mallorca Airport, 07611 Palma, Spain\",\n        \"formatted_address\": \"PMI Airport\"\n      },\n      \"destination\": {\n        \"latitude\": 39.5665,\n        \"longitude\": 2.6502,\n        \"iata_code\": null,\n        \"icao_code\": null,\n        \"area_code\": \"PALMA\",\n        \"full_address\": \"Hotel Maricel, Carrer de Garita, 3, 07015 Palma, Spain\",\n        \"formatted_address\": \"Hotel Maricel, Palma\"\n      },\n      \"departure_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440030\",\n        \"pickup_datetime\": \"2026-03-15T14:30:00Z\",\n        \"transfer_type\": \"OUTBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"return_trip\": {\n        \"trip_id\": \"850e8400-e29b-41d4-a716-446655440031\",\n        \"pickup_datetime\": \"2026-03-22T10:00:00Z\",\n        \"transfer_type\": \"INBOUND\",\n        \"vehicle\": {\n          \"vehicle_id\": \"950e8400-e29b-41d4-a716-446655440040\",\n          \"type\": \"SHUTTLE\",\n          \"description\": \"Shared shuttle bus\",\n          \"model\": \"Mercedes Sprinter\",\n          \"image\": \"https://example.com/images/shuttle.jpg\",\n          \"capacity\": 16,\n          \"max_bags\": 20,\n          \"max_paxes\": 16\n        }\n      },\n      \"price\": {\n        \"service_type\": \"SHARED\",\n        \"currency\": \"EUR\",\n        \"total_amount\": 60.00,\n        \"subtotal_amount\": 50.00,\n        \"fees_and_taxes\": 10.00,\n        \"pax_prices\": [\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n            \"currency\": \"EUR\",\n            \"amount\": 30.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440002\",\n            \"currency\": \"EUR\",\n            \"amount\": 20.00\n          },\n          {\n            \"pax_id\": \"550e8400-e29b-41d4-a716-446655440003\",\n            \"currency\": \"EUR\",\n            \"amount\": 0.00\n          }\n        ]\n      }\n    }\n  ]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/place",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "command-handler",
-            "api",
-            "bookings",
-            "place"
+            "create"
           ]
         }
       },
@@ -181,7 +141,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/638127ef-f37b-4a38-b74f-ee69e07933cf/confirm",
+          "raw": "http://localhost:8080/command-handler/api/bookings/432fcb88-1d7d-468e-b089-ad9aa7b480ba/confirm",
           "protocol": "http",
           "host": [
             "localhost"
@@ -191,7 +151,7 @@
             "command-handler",
             "api",
             "bookings",
-            "638127ef-f37b-4a38-b74f-ee69e07933cf",
+            "432fcb88-1d7d-468e-b089-ad9aa7b480ba",
             "confirm"
           ]
         }
@@ -213,7 +173,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/90f8eafb-2570-4004-97b9-01a2646f87f1/cancel",
+          "raw": "http://localhost:8080/command-handler/api/bookings/432fcb88-1d7d-468e-b089-ad9aa7b480ba/cancel",
           "protocol": "http",
           "host": [
             "localhost"
@@ -223,7 +183,7 @@
             "command-handler",
             "api",
             "bookings",
-            "90f8eafb-2570-4004-97b9-01a2646f87f1",
+            "432fcb88-1d7d-468e-b089-ad9aa7b480ba",
             "cancel"
           ]
         }
@@ -245,7 +205,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/10b8778d-caa4-4ac4-bd87-0fe47d64ef56/complete",
+          "raw": "http://localhost:8080/command-handler/api/bookings/432fcb88-1d7d-468e-b089-ad9aa7b480ba/complete",
           "protocol": "http",
           "host": [
             "localhost"
@@ -255,7 +215,7 @@
             "command-handler",
             "api",
             "bookings",
-            "10b8778d-caa4-4ac4-bd87-0fe47d64ef56",
+            "432fcb88-1d7d-468e-b089-ad9aa7b480ba",
             "complete"
           ]
         }
@@ -277,7 +237,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8080/command-handler/api/bookings/25e5eba8-ecbd-4aca-90a0-8e7b310473d1/expire",
+          "raw": "http://localhost:8080/command-handler/api/bookings/432fcb88-1d7d-468e-b089-ad9aa7b480ba/expire",
           "protocol": "http",
           "host": [
             "localhost"
@@ -287,7 +247,7 @@
             "command-handler",
             "api",
             "bookings",
-            "25e5eba8-ecbd-4aca-90a0-8e7b310473d1",
+            "432fcb88-1d7d-468e-b089-ad9aa7b480ba",
             "expire"
           ]
         }
@@ -338,7 +298,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:7080/query-handler/api/bookings/25e5eba8-ecbd-4aca-90a0-8e7b310473d1",
+          "raw": "http://localhost:7080/query-handler/api/bookings/7e2814e6-642b-4cc7-a714-f63709ff16cf",
           "protocol": "http",
           "host": [
             "localhost"
@@ -348,7 +308,7 @@
             "query-handler",
             "api",
             "bookings",
-            "25e5eba8-ecbd-4aca-90a0-8e7b310473d1"
+            "7e2814e6-642b-4cc7-a714-f63709ff16cf"
           ]
         }
       },
