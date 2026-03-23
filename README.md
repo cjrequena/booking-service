@@ -110,6 +110,50 @@ The Booking Service is split into two independent microservices:
                                     └────────────────────────────┘
 
 ```
+```mermaid
+graph TB
+    Client["🖥️ Client Applications"]
+
+    Client -->|"Commands\n(POST/PUT/DELETE)"| RestCmd
+    Client -->|"Queries\n(GET)"| RestQuery
+
+    subgraph CMD["📝 booking-command-handler\n(Write Side - Port 8080)"]
+        direction TB
+        RestCmd["REST Controllers"] --> CommandBus["Command Bus"]
+        CommandBus --> Aggregates["Domain Aggregates\n(Booking)"]
+        Aggregates --> EventStoreService["Event Store Service"]
+        EventStoreService --> PostgreSQL[("PostgreSQL\n(Event Store)")]
+        KafkaPublisher["Kafka Publisher\n(External Boundaries)"]
+    end
+
+    subgraph QRY["🔍 booking-query-handler\n(Read Side - Port 8081)"]
+        direction TB
+        RestQuery["REST Controllers"] --> QueryService["Query Service"]
+        QueryService --> MongoDB[("MongoDB Reactive\n(Projections)")]
+        ProjectionHandler["Projection Handler\n(Polls Events)"] --> MongoDB
+    end
+
+    CMD ~~~ QRY
+
+    PostgreSQL -.->|"Scheduled\nEvent Polling"| ProjectionHandler
+    KafkaPublisher -->|"External\nEvent Stream"| Kafka["🔶 Apache Kafka (Optional)\nbooking-events"]
+
+    style Client fill:#4A90D9,stroke:#2C5F8A,color:#fff
+    style CMD fill:#E8F5E9,stroke:#43A047,color:#1B5E20
+    style QRY fill:#E3F2FD,stroke:#1E88E5,color:#0D47A1
+    style RestCmd fill:#66BB6A,stroke:#2E7D32,color:#fff
+    style CommandBus fill:#81C784,stroke:#388E3C,color:#fff
+    style Aggregates fill:#A5D6A7,stroke:#43A047,color:#1B5E20
+    style EventStoreService fill:#81C784,stroke:#388E3C,color:#fff
+    style PostgreSQL fill:#FF8F00,stroke:#E65100,color:#fff
+    style KafkaPublisher fill:#C8E6C9,stroke:#66BB6A,color:#1B5E20
+    style RestQuery fill:#42A5F5,stroke:#1565C0,color:#fff
+    style QueryService fill:#64B5F6,stroke:#1976D2,color:#fff
+    style MongoDB fill:#4DB6AC,stroke:#00695C,color:#fff
+    style ProjectionHandler fill:#90CAF9,stroke:#1E88E5,color:#0D47A1
+    style Kafka fill:#FFB74D,stroke:#E65100,color:#fff
+
+```
 
 ### Projection Synchronization Strategies
 
