@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ProductType {
 
-  TRANSFER("Transfer");
+  TRANSFER("Transfer"),
+  HOTEL("Hotel");
 
   private final String type;
 

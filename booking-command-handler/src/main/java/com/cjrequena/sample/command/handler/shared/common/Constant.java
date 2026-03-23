@@ -17,6 +17,7 @@ public class Constant {
   /**
    * PRODUCTS */
   public static final String TRANSFER = "Transfer";
+  public static final String HOTEL = "Hotel";
 
   public static final String KAFKA_BOOKING_ORDER_OUTBOUND_CHANNEL = "event-booking-out-0";
 

@@ -2,6 +2,7 @@ package com.cjrequena.sample.query.handler.persistence.mongodb.entity;
 
 import com.cjrequena.sample.query.handler.domain.model.enums.ProductStatus;
 import com.cjrequena.sample.query.handler.domain.model.enums.ProductType;
+import com.cjrequena.sample.query.handler.persistence.mongodb.entity.hotel.HotelEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.transfer.TransferEntity;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeDeserializer;
 import com.cjrequena.sample.query.handler.shared.common.serializer.OffsetDateTimeSerializer;
@@ -27,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static com.cjrequena.sample.query.handler.shared.common.Constant.HOTEL;
 import static com.cjrequena.sample.query.handler.shared.common.Constant.TRANSFER;
 
 /**
@@ -62,10 +64,8 @@ import static com.cjrequena.sample.query.handler.shared.common.Constant.TRANSFER
   visible = true
 )
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = TransferEntity.class, name = TRANSFER)
-  // Add other product types here as needed:
-  // @JsonSubTypes.Type(value = Activity.class, name = "Activity"),
-  // @JsonSubTypes.Type(value = Hotel.class, name = "Hotel")
+  @JsonSubTypes.Type(value = TransferEntity.class, name = TRANSFER),
+  @JsonSubTypes.Type(value = HotelEntity.class, name = HOTEL)
 })
 @Schema(description = "Represents a product")
 @Document

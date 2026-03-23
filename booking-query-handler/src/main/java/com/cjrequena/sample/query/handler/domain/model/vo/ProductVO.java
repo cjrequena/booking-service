@@ -2,12 +2,14 @@ package com.cjrequena.sample.query.handler.domain.model.vo;
 
 import com.cjrequena.sample.query.handler.domain.model.enums.ProductStatus;
 import com.cjrequena.sample.query.handler.domain.model.enums.ProductType;
+import com.cjrequena.sample.query.handler.domain.model.vo.hotel.HotelVO;
 import com.cjrequena.sample.query.handler.domain.model.vo.transfer.TransferVO;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.UUID;
 
+import static com.cjrequena.sample.query.handler.shared.common.Constant.HOTEL;
 import static com.cjrequena.sample.query.handler.shared.common.Constant.TRANSFER;
 
 /**
@@ -37,10 +39,8 @@ import static com.cjrequena.sample.query.handler.shared.common.Constant.TRANSFER
   visible = true
 )
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = TransferVO.class, name = TRANSFER)
-  // Add other product types here as you create them:
-  // @JsonSubTypes.Type(value = ActivityVO.class, name = "Activity"),
-  // @JsonSubTypes.Type(value = HotelVO.class, name = "Hotel")
+  @JsonSubTypes.Type(value = TransferVO.class, name = TRANSFER),
+  @JsonSubTypes.Type(value = HotelVO.class, name = HOTEL)
 })
 public interface ProductVO {
 

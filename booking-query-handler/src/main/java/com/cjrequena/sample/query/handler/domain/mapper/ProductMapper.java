@@ -2,8 +2,10 @@ package com.cjrequena.sample.query.handler.domain.mapper;
 
 import com.cjrequena.sample.query.handler.domain.exception.MapperException;
 import com.cjrequena.sample.query.handler.domain.model.vo.ProductVO;
+import com.cjrequena.sample.query.handler.domain.model.vo.hotel.HotelVO;
 import com.cjrequena.sample.query.handler.domain.model.vo.transfer.TransferVO;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.ProductEntity;
+import com.cjrequena.sample.query.handler.persistence.mongodb.entity.hotel.HotelEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.transfer.TransferEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.cjrequena.sample.query.handler.shared.common.Constant.HOTEL;
 import static com.cjrequena.sample.query.handler.shared.common.Constant.TRANSFER;
 
 /**
@@ -66,6 +69,14 @@ public interface ProductMapper {
   @Mapping(source = "metadata.paxesIds", target = "paxesIds")
   TransferEntity toTransfer(TransferVO transferVO);
 
+  @Mapping(source = "metadata.productId", target = "productId")
+  @Mapping(source = "metadata.searchId", target = "searchId")
+  @Mapping(source = "metadata.searchCreatedAt", target = "searchCreatedAt")
+  @Mapping(source = "metadata.productType", target = "productType")
+  @Mapping(source = "metadata.status", target = "status")
+  @Mapping(source = "metadata.paxesIds", target = "paxesIds")
+  HotelEntity toHotel(HotelVO hotelVO);
+
   /**
    * Maps a generic ProductVO to its corresponding ProductEntity.
    * <p>
@@ -83,6 +94,8 @@ public interface ProductMapper {
     switch (productType) {
       case TRANSFER:
         return toTransfer((TransferVO) productVO);
+      case HOTEL:
+        return toHotel((HotelVO) productVO);
       default:
         String errorMessage = String.format("Error mapping to ProductEntity, unknown product type: %s", productVO.productType());
         log.error(errorMessage);

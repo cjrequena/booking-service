@@ -17,5 +17,6 @@ public class Constant {
 
   /** PRODUCTS */
   public static final String TRANSFER = "Transfer";
+  public static final String HOTEL = "Hotel";
 
 }
