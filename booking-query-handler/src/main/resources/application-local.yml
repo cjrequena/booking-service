@@ -1,0 +1,155 @@
+---
+# ----------------------------------------
+# LOCAL
+# ----------------------------------------
+spring.config.activate.on-profile: local
+
+spring.config.import: "optional:configserver:${CONFIG_SERVER:http://localhost:8888}/"
+spring.cloud.config:
+  # Flag to say that remote configuration is enabled. (default false).
+  enabled: ${SPRING_CLOUD_CONFIG_ENABLED:false}
+  # Flag to indicate that failure to connect to the server is fatal (default false).
+  failFast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:true}
+
+# ----------------------------------------
+# EventStore DataSource Configuration
+# ----------------------------------------
+spring:
+  datasource:
+    eventstore:
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbcUrl: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/postgres}?currentSchema=eventstore
+      driver-class-name: org.postgresql.Driver
+      username: postgres
+      password: postgres
+      testOnBorrow: true
+      validationQuery: SELECT 1
+      pool-name: EventStoreHikariPool
+      connection-timeout: 20000
+      minimum-idle: 5
+      maximum-pool-size: 12
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: false
+
+# ----------------------------------------
+# JPA specific configs
+# ----------------------------------------
+spring.jpa.open-in-view: false
+spring.jpa.show_sql: false
+#spring.jpa.hibernate.ddl-auto: validate
+# CRITICAL: Use Hibernate 6.x spatial dialect
+spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+#spring.jpa.properties.hibernate.session_factory.statement_inspector: io.jaspe.auth.persistence.interceptor.TenantStatementInspector
+spring.jpa.properties.hibernate.format_sql: true
+spring.jpa.properties.hibernate.use_sql: true
+spring.jpa.properties.hibernate.hibernate.dialect: true
+spring.jpa.properties.hibernate.id.new_generator_mappings: false
+spring.jpa.properties.hibernate.search.autoregister_listeners: false
+spring.jpa.properties.hibernate.bytecode.use_reflection_optimizer: false
+spring.jpa.properties.hibernate.default_schema: eventstore
+
+
+# ----------------------------------------
+# Event store and Event subscriptions.
+# ----------------------------------------
+eventstore:
+  snapshot:
+    # The aggregate type
+    Booking:
+      enabled: true
+      interval: 5
+  # Available subscription: polling, postgres-channel
+  subscription:
+    enabled: true
+    #name: bqh-mongo-projection
+    name: bqh-mongo-projection-${random.int(100)}
+    polling-initial-delay: PT6S
+    polling-interval: PT6S
+
+# ----------------------------------------
+# MongoDB :: Projection
+# ----------------------------------------
+spring.data.mongodb:
+  host: ${MONGODB_HOST:localhost}
+  port: 27017
+  database: booking
+  username: root
+  password: root
+  authentication-database: admin
+  auto-index-creation: true
+  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
+  # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+
+# ----------------------------------------
+# Projections
+# ----------------------------------------
+projections.handlers.enabled: true
+
+# ----------------------------------------
+# Redis - Enhanced Configuration
+# ----------------------------------------
+spring.redis:
+  host: localhost
+  port: 6379
+  password: # Leave empty for no password
+  ssl: false
+  timeout: 10000  # 10 seconds
+  database: 0
+  # Connection Pooling Configuration
+  lettuce:
+    pool:
+      max-active: 8      # Maximum number of connections
+      max-idle: 8        # Maximum idle connections
+      min-idle: 2        # Minimum idle connections
+      max-wait: 5000     # Maximum wait time in ms
+    shutdown-timeout: 100  # Shutdown timeout in ms
+  # Uncomment for Cluster mode
+  #cluster:
+  #  nodes:
+  #    - 127.0.0.1:7000
+  #    - 127.0.0.1:7001
+  #    - 127.0.0.1:7002
+  #  max-redirects: 3
+  # Uncomment for Sentinel mode
+  #sentinel:
+  #  master: mymaster
+  #  nodes:
+  #    - 127.0.0.1:26379
+  #    - 127.0.0.1:26380
+  #    - 127.0.0.1:26381
+
+# ----------------------------------------
+# springdoc :: swagger configuration
+# ----------------------------------------
+springdoc:
+  api-docs:
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: DESC
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+# ----------------------------------------
+# LOGGING
+# ----------------------------------------
+# https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#appendix.application-properties.core
+logging.level:
+  org.springframework: ERROR
+  org.flywaydb: INFO
+  com.zaxxer.hikari: INFO
+  com.cjrequena: INFO
+  com.cjrequena.core.eventstore: INFO
+logging.pattern:
+  console: "%highlight{%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n}{
+      FATAL=bg_red, 
+      ERROR=red, 
+      WARN=yellow, 
+      INFO=green, 
+      DEBUG=blue, 
+      TRACE=cyan
+    }"
+  file: "%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n"

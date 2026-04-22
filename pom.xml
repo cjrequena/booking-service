@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.5.13</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -22,9 +22,9 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.version>3.9.9</maven.version>
         <!-- https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-dependencies -->
-        <spring-cloud-dependencies.version>2025.0.1</spring-cloud-dependencies.version>
+        <spring-cloud-dependencies.version>2025.0.2</spring-cloud-dependencies.version>
         <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webflux-ui -->
-        <org.springdoc.version>2.8.13</org.springdoc.version>
+        <org.springdoc.version>2.8.17</org.springdoc.version>
         <!-- https://mvnrepository.com/artifact/org.mapstruct/mapstruct -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <!-- https://mvnrepository.com/artifact/org.apache.johnzon/johnzon-core -->
@@ -35,6 +35,10 @@
         <com.github.f4b6a3.uuid-creator.version>6.1.1</com.github.f4b6a3.uuid-creator.version>
         <!-- https://mvnrepository.com/artifact/org.jacoco/jacoco-maven-plugin -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+        <!-- https://mvnrepository.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
+        <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
+        <!-- https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api -->
+        <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
         <!-- Sonar Configuration -->
         <sonar.host.url>http://localhost:9000</sonar.host.url>
         <sonar.token>sonar-token</sonar.token>
@@ -54,7 +58,7 @@
             **/dto/**,
             **/entity/**,
             **/exception/**,
-            **/*Application.java
+            **/*Application.java,
             **/*Mock*.java
         </sonar.exclusions>
         <sonar.coverage.exclusions>
@@ -152,7 +156,7 @@
                         <path>
                             <groupId>jakarta.persistence</groupId>
                             <artifactId>jakarta.persistence-api</artifactId>
-                            <version>3.1.0</version>
+                            <version>${jakarta.persistence-api.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -347,7 +351,7 @@
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.11.0.3922</version>
+                <version>${sonar-maven-plugin.version}</version>
             </plugin>
         </plugins>
     </build>

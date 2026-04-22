@@ -1,0 +1,180 @@
+# ----------------------------------------
+# LOCAL
+# ----------------------------------------
+spring.config.activate.on-profile: local
+
+spring.config.import: "optional:configserver:${CONFIG_SERVER:http://localhost:8888}/"
+spring.cloud.config:
+  # Flag to say that remote configuration is enabled. (default false).
+  enabled: ${SPRING_CLOUD_CONFIG_ENABLED:false}
+  # Flag to indicate that failure to connect to the server is fatal (default false).
+  failFast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:true}
+
+# ----------------------------------------
+# EventStore DataSource Configuration
+# ----------------------------------------
+spring:
+  datasource:
+    eventstore:
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbcUrl: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/postgres}?currentSchema=eventstore
+      driver-class-name: org.postgresql.Driver
+      username: postgres
+      password: postgres
+      testOnBorrow: true
+      validationQuery: SELECT 1
+      pool-name: EventStoreHikariPool
+      connection-timeout: 20000
+      minimum-idle: 5
+      maximum-pool-size: 12
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      auto-commit: false
+
+# ----------------------------------------
+# JPA specific configs
+# ----------------------------------------
+spring.jpa.open-in-view: false
+spring.jpa.show_sql: false
+#spring.jpa.hibernate.ddl-auto: validate
+# CRITICAL: Use Hibernate 6.x spatial dialect
+spring.jpa.properties.hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+#spring.jpa.properties.hibernate.session_factory.statement_inspector: io.jaspe.auth.persistence.interceptor.TenantStatementInspector
+spring.jpa.properties.hibernate.format_sql: true
+spring.jpa.properties.hibernate.use_sql: true
+spring.jpa.properties.hibernate.hibernate.dialect: true
+spring.jpa.properties.hibernate.id.new_generator_mappings: false
+spring.jpa.properties.hibernate.search.autoregister_listeners: false
+spring.jpa.properties.hibernate.bytecode.use_reflection_optimizer: false
+spring.jpa.properties.hibernate.default_schema: eventstore
+
+# ----------------------------------------
+# MongoDB :: Projection
+# ----------------------------------------
+spring.data.mongodb:
+  host: ${MONGODB_HOST:localhost}
+  port: 27017
+  database: booking
+  username: root
+  password: root
+  authentication-database: admin
+  auto-index-creation: true
+  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
+  # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+
+# ----------------------------------------
+# Projections
+# ----------------------------------------
+projections.handlers.enabled: false
+
+# ----------------------------------------
+# Event store and Event subscriptions.
+# ----------------------------------------
+eventstore:
+  snapshot:
+    # The aggregate type
+    Booking:
+      enabled: true
+      interval: 5
+  # Available subscription: polling, postgres-channel
+  subscription:
+    enabled: true
+    name: booking-command-handler-subscription
+    #name: event-handler-${random.int(100)}
+    polling-initial-delay: PT6S
+    polling-interval: PT6S
+
+# ----------------------------------------
+# Flyway
+# ----------------------------------------
+spring.flyway:
+  enabled: true
+  baseline-on-migrate: true
+  locations: classpath:/db/migration
+
+#------------------------------
+# SPRING CLOUD STREAM
+#------------------------------
+# https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/
+spring.cloud.stream:
+  defaultBinder: my-kafka-binder-01
+  default:
+    content-type: application/json
+  bindings:
+    event-booking-out-0:
+      binder: my-kafka-binder-01
+      destination: event-booking-01
+      content-type: application/json
+      producer:
+        headerMode: headers
+        useNativeEncoding: true
+  binders:
+    my-kafka-binder-01:
+      type: kafka
+      environment:
+        spring.cloud.stream.kafka.binder:
+          brokers: "localhost:9092"
+          headers:
+            - x-test-header
+  kafka:
+    bindings:
+      event-booking-out-0:
+        producer:
+          configuration:
+            key.serializer: org.apache.kafka.common.serialization.StringSerializer
+            value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            spring.json.add.type.headers: false
+
+spring.cloud.sleuth:
+  json:
+    enabled: false
+
+#------------------------------
+# LOGGING
+#------------------------------
+# https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#appendix.application-properties.core
+logging.level:
+  org.springframework: ERROR
+  org.flywaydb: INFO
+  com.zaxxer.hikari: INFO
+  com.cjrequena: INFO
+  com.cjrequena.core.eventstore: INFO
+logging.pattern:
+  console: "%highlight{%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n}{
+      FATAL=bg_red, 
+      ERROR=red, 
+      WARN=yellow, 
+      INFO=green, 
+      DEBUG=blue, 
+      TRACE=cyan
+    }"
+  file: "%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n"
+
+spring.jackson:
+  property-naming-strategy: SNAKE_CASE
+
+#------------------------------
+# Swagger - springdoc-openapi
+#------------------------------
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+    display-request-duration: true
+    doc-expansion: none
+  packages-to-scan: com.cjrequena.sample.command.handler.controller
+  paths-to-match: /command-handler/api/**
+  show-actuator: false
+  override-with-generic-response: false
+  writer-with-default-pretty-printer: true
+  use-fqn: true
+  cache:
+    disabled: true
+  model-and-view-allowed: true

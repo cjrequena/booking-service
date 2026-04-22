@@ -8,19 +8,6 @@ spring.application.version: '@project.version@'
 spring.profiles.active: ${SPRING_PROFILES_ACTIVE:local}
 spring.main.allow-bean-definition-overriding: true # Enable bean override
 
----
-# ----------------------------------------
-# LOCAL
-# ----------------------------------------
-spring.config.activate.on-profile: local
-
-spring.config.import: "optional:configserver:${CONFIG_SERVER:http://localhost:8888}/"
-spring.cloud.config:
-  # Flag to say that remote configuration is enabled. (default false).
-  enabled: ${SPRING_CLOUD_CONFIG_ENABLED:false}
-  # Flag to indicate that failure to connect to the server is fatal (default false).
-  failFast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:true}
-
 # ----------------------------------------
 # ACTUATOR PROPERTIES
 # ----------------------------------------
@@ -31,7 +18,7 @@ management.endpoints.web.base-path: /management # Base path for Web endpoints. R
 management.endpoints.web.path-mapping.health: healthcheck
 # HEALTH ENDPOINT
 management.endpoint.health.cache.time-to-live: 0ms # Maximum time that a response can be cached.
-management.endpoint.health.enabled: true # Whether to enable the health endpoint.
+management.endpoint.health.access: unrestricted # Allows unrestricted access to the health endpoint
 management.endpoint.health.roles:  # Roles used to determine whether or not a user is authorized to be shown details. When empty, all authenticated users are authorized.
 management.endpoint.health.show-details: always # When to show full health details.
 management.health.circuitbreakers.enabled: true
@@ -43,167 +30,6 @@ management.info.env.enabled: true # Whether to enable environment info.
 management.info.git.enabled: true # Whether to enable git info.
 management.info.git.mode: full # Mode to use to expose git information.
 # TRACING
-management.tracing.sampling.probability: 1.0  # trace 100% (dev only)
-management.tracing.endpoints.web.exposure.include: "*"
+management.tracing.sampling.probability: 1.0   # 100% sampling (use lower in prod)
 
-spring.web.resources.add-mappings: true # To fix favicon not found issue.
 
-# ----------------------------------------
-# EventStore DataSource Configuration
-# ----------------------------------------
-spring:
-  datasource:
-    eventstore:
-      type: com.zaxxer.hikari.HikariDataSource
-      jdbcUrl: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/postgres
-      driver-class-name: org.postgresql.Driver
-      username: postgres
-      password: postgres
-      testOnBorrow: true
-      validationQuery: SELECT 1
-      pool-name: EventStoreHikariPool
-      connection-timeout: 20000
-      minimum-idle: 5
-      maximum-pool-size: 12
-      idle-timeout: 300000
-      max-lifetime: 1200000
-      auto-commit: false
-      jpa:
-        open-in-view: false
-        properties:
-          hibernate:
-            dialect: org.hibernate.dialect.PostgreSQLDialect
-            show_sql: false
-            format_sql: true
-            use_sql: true
-            id.new_generator_mappings: false
-            search.autoregister_listeners: false
-            bytecode.use_reflection_optimizer: false
-            jdbc.lob.non_contextual_creation: true
-            #default_schema: eventstore
-
-# ----------------------------------------
-# MongoDB :: Projection
-# ----------------------------------------
-spring.data.mongodb:
-  host: ${MONGODB_HOST:localhost}
-  port: 27017
-  database: booking
-  username: root
-  password: root
-  authentication-database: admin
-  auto-index-creation: true
-  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
-  # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
-
-# ----------------------------------------
-# Projections
-# ----------------------------------------
-projections.handlers.enabled: false
-
-# ----------------------------------------
-# Event store and Event subscriptions.
-# ----------------------------------------
-eventstore:
-  snapshot:
-    # The aggregate type
-    Booking:
-      enabled: true
-      interval: 5
-  # Available subscription: polling, postgres-channel
-  subscription:
-    enabled: true
-    name: booking-command-handler-subscription
-    #name: event-handler-${random.int(100)}
-    polling-initial-delay: PT6S
-    polling-interval: PT6S
-
-# ----------------------------------------
-# Flyway
-# ----------------------------------------
-spring.flyway:
-  enabled: true
-  baseline-on-migrate: true
-  locations: classpath:/db/migration
-
-#------------------------------
-# SPRING CLOUD STREAM
-#------------------------------
-# https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/
-spring.cloud.stream:
-  defaultBinder: my-kafka-binder-01
-  default:
-    content-type: application/json
-  bindings:
-    event-booking-out-0:
-      binder: my-kafka-binder-01
-      destination: event-booking-01
-      content-type: application/json
-      producer:
-        headerMode: headers
-        useNativeEncoding: true
-  binders:
-    my-kafka-binder-01:
-      type: kafka
-      environment:
-        spring.cloud.stream.kafka.binder:
-          brokers: "localhost:9092"
-          headers:
-            - x-test-header
-        spring.cloud.stream.kafka.bindings:
-          event-booking-out-0:
-            producer:
-              configuration:
-                key.serializer: org.apache.kafka.common.serialization.StringSerializer
-                value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
-spring.cloud.sleuth:
-  json:
-    enabled: false
-
-#------------------------------
-# LOGGING
-#------------------------------
-# https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#appendix.application-properties.core
-logging.level:
-  org.springframework: ERROR
-  org.flywaydb: INFO
-  com.zaxxer.hikari: INFO
-  com.cjrequena: INFO
-  com.cjrequena.core.eventstore: INFO
-logging.pattern:
-  console: "%highlight{%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n}{
-      FATAL=bg_red, 
-      ERROR=red, 
-      WARN=yellow, 
-      INFO=green, 
-      DEBUG=blue, 
-      TRACE=cyan
-    }"
-  file: "%-5p|%d{ISO8601}{GMT}|application=${spring.application.name}|traceID=%X{traceId},spanID=%X{spanId}|%c{1}|%m%ex%n"
-
-spring.jackson:
-  property-naming-strategy: SNAKE_CASE
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-    try-it-out-enabled: true
-    filter: true
-    display-request-duration: true
-    doc-expansion: none
-  packages-to-scan: com.cjrequena.sample.command.handler.controller
-  paths-to-match: /command-handler/api/**
-  show-actuator: false
-  override-with-generic-response: false
-  writer-with-default-pretty-printer: true
-  use-fqn: true
-  cache:
-    disabled: true
-  model-and-view-allowed: true
