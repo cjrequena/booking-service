@@ -9,6 +9,17 @@ spring.profiles.active: ${SPRING_PROFILES_ACTIVE:local}
 spring.main.allow-bean-definition-overriding: true # Enable bean override
 
 # ----------------------------------------
+# SECURITY (Cognito JWT)
+# ----------------------------------------
+# Disabled by default. The local/integrationTest profiles permit all requests (unauthenticated),
+# preserving existing behaviour. Enable + set an issuer to protect non-public endpoints on
+# deployed profiles.
+security:
+  cognito:
+    enabled: ${COGNITO_ENABLED:false}
+    issuer-uri: ${COGNITO_ISSUER_URI:}
+
+# ----------------------------------------
 # ACTUATOR PROPERTIES
 # ----------------------------------------
 # ENDPOINTS WEB CONFIGURATION

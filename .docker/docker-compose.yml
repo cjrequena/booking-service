@@ -1,5 +1,53 @@
 services:
   # -------------------------------------------------------
+  # booking-command-handler (app)
+  # -------------------------------------------------------
+  booking-command-handler:
+    build:
+      context: ../booking-command-handler
+      dockerfile: Dockerfile
+    image: booking-command-handler:local
+    container_name: booking-command-handler
+    hostname: booking-command-handler
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-postgres}
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-root}:${MONGO_INITDB_ROOT_PASSWORD:-root}@mongo:27017/booking?authSource=admin
+      KAFKA_BROKERS: kafka:29092
+    ports:
+      - "8080:8080"
+    networks:
+      - local-network
+    depends_on:
+      - postgres
+      - mongo
+      - kafka
+    restart: unless-stopped
+  # -------------------------------------------------------
+  # booking-query-handler (app)
+  # -------------------------------------------------------
+  booking-query-handler:
+    build:
+      context: ../booking-query-handler
+      dockerfile: Dockerfile
+    image: booking-query-handler:local
+    container_name: booking-query-handler
+    hostname: booking-query-handler
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-postgres}
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-root}:${MONGO_INITDB_ROOT_PASSWORD:-root}@mongo:27017/booking?authSource=admin
+      REDIS_HOST: redis-local
+    ports:
+      - "7080:7080"
+    networks:
+      - local-network
+    depends_on:
+      - postgres
+      - mongo
+      - redis
+    restart: unless-stopped
+  # -------------------------------------------------------
   # Postgres
   # -------------------------------------------------------
   postgres:

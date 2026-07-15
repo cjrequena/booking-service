@@ -1,5 +1,6 @@
 package com.cjrequena.sample.query.handler.controller;
 
+import com.cjrequena.sample.query.handler.controller.exception.BadRequestException;
 import com.cjrequena.sample.query.handler.controller.exception.NotFoundException;
 import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundException;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
@@ -17,11 +18,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -122,18 +119,36 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<Flux<BookingEntity>>> retrieve() {
-    log.debug("Retrieving all bookings");
-    
-    Flux<BookingEntity> bookings = bookingProjectionService
-      .retrieve()
-      .doOnComplete(() -> log.debug("Successfully retrieved all bookings"))
+  public Mono<ResponseEntity<Object>> retrieve(
+    @RequestParam(value = "filter", required = false) String filter,
+    @RequestParam(value = "offset", required = false) Integer offset,
+    @RequestParam(value = "limit", required = false) Integer limit,
+    @RequestParam(value = "sort", required = false) String sort
+  ) {
+    log.debug("Retrieving bookings - filter: {}, offset: {}, limit: {}, sort: {}", filter, offset, limit, sort);
+
+    // Paginated response when both offset and limit are supplied.
+    if (offset != null && limit != null) {
+      return bookingProjectionService
+        .retrievePage(filter, offset, limit, sort)
+        .map(page -> ResponseEntity
+          .ok()
+          .cacheControl(CacheControl.noCache())
+          .body((Object) page))
+        .onErrorMap(IllegalArgumentException.class, ex -> new BadRequestException(ex.getMessage()))
+        .doOnError(ex -> log.error("Error retrieving bookings page: {}", ex.getMessage()));
+    }
+
+    // Full (optionally filtered/sorted) collection — preserves the original list behaviour.
+    return bookingProjectionService
+      .retrieve(filter, sort)
+      .collectList()
+      .map(bookings -> ResponseEntity
+        .ok()
+        .cacheControl(CacheControl.noCache())
+        .body((Object) bookings))
+      .onErrorMap(IllegalArgumentException.class, ex -> new BadRequestException(ex.getMessage()))
       .doOnError(ex -> log.error("Error retrieving bookings: {}", ex.getMessage()));
-    
-    return Mono.just(ResponseEntity
-      .ok()
-      .cacheControl(CacheControl.noCache())
-      .body(bookings));
   }
 
 }

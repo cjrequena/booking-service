@@ -4,9 +4,11 @@ import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundExcept
 import com.cjrequena.sample.query.handler.domain.exception.BookingProjectionException;
 import com.cjrequena.sample.query.handler.domain.mapper.PaxMapper;
 import com.cjrequena.sample.query.handler.domain.mapper.ProductMapper;
+import com.cjrequena.sample.query.handler.domain.model.PageResult;
 import com.cjrequena.sample.query.handler.domain.model.aggregate.Booking;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.repository.BookingProjectionRepository;
+import com.cjrequena.sample.query.handler.service.base.BaseService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,11 +46,22 @@ import java.util.UUID;
 @Service
 @Log4j2
 @AllArgsConstructor(onConstructor = @__(@Autowired))
-public class BookingProjectionService {
+public class BookingProjectionService extends BaseService<BookingEntity> {
 
   private final BookingProjectionRepository bookingProjectionRepository;
   private final PaxMapper paxMapper;
   private final ProductMapper productMapper;
+  private final ReactiveMongoTemplate mongoTemplate;
+
+  @Override
+  protected ReactiveMongoTemplate getMongoTemplate() {
+    return this.mongoTemplate;
+  }
+
+  @Override
+  protected Class<BookingEntity> getEntityClass() {
+    return BookingEntity.class;
+  }
 
   /**
    * Saves a booking aggregate to the projection database and updates cache.
@@ -209,6 +223,32 @@ public class BookingProjectionService {
   public Flux<BookingEntity> retrieve() {
     log.debug("Retrieving all bookings from database");
     return this.bookingProjectionRepository.findAll();
+  }
+
+  /**
+   * Retrieves bookings with optional filtering and sorting (no pagination).
+   *
+   * @param filter optional filter expression (see {@link BaseService})
+   * @param sort   optional sort expression, e.g. {@code status,asc}
+   * @return Flux of matching booking entities
+   */
+  public Flux<BookingEntity> retrieve(String filter, String sort) {
+    log.debug("Retrieving bookings with filter: {}, sort: {}", filter, sort);
+    return findAllWithFiltersAndSort(filter, null, null, sort);
+  }
+
+  /**
+   * Retrieves a page of bookings with optional filtering and sorting.
+   *
+   * @param filter optional filter expression (see {@link BaseService})
+   * @param offset zero-based pagination offset
+   * @param limit  maximum number of results per page
+   * @param sort   optional sort expression, e.g. {@code status,asc}
+   * @return Mono of a {@link PageResult} with content and pagination metadata
+   */
+  public Mono<PageResult<BookingEntity>> retrievePage(String filter, Integer offset, Integer limit, String sort) {
+    log.debug("Retrieving bookings page with filter: {}, offset: {}, limit: {}, sort: {}", filter, offset, limit, sort);
+    return findPageWithFiltersAndSort(filter, offset, limit, sort);
   }
 
   /**
