@@ -2,6 +2,7 @@ package com.cjrequena.sample.query.handler.controller;
 
 import com.cjrequena.sample.query.handler.controller.exception.NotFoundException;
 import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundException;
+import com.cjrequena.sample.query.handler.domain.model.PageResult;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.service.projection.BookingProjectionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,6 +40,8 @@ public class BookingQueryController {
 
   public static final String ENDPOINT = "/query-handler/api";
   public static final String ACCEPT_VERSION = "accept-version=" + VND_BOOKING_ORDER_QUERY_HANDLER_V1;
+  /** Total matches before paging; exposed to browsers by the CORS configuration. */
+  public static final String TOTAL_COUNT_HEADER = "total-count";
   
   private final BookingProjectionService bookingProjectionService;
 
@@ -92,8 +96,8 @@ public class BookingQueryController {
 
 
   @Operation(
-    summary = "Retrieve all bookings",
-    description = "Retrieves a list of all booking projections. Consider implementing pagination for production use with large datasets.",
+    summary = "Retrieve bookings",
+    description = "Retrieves booking projections, optionally filtered (RSQL), sorted and paged. The total-count response header carries the number of matches before paging.",
     parameters = {
       @Parameter(
         name = "accept-version", 
@@ -119,13 +123,24 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings", produces = {APPLICATION_JSON_VALUE})
-  public ResponseEntity<List<BookingEntity>> retrieve() {
-    log.debug("Retrieving all bookings");
-    List<BookingEntity> bookings = bookingProjectionService.retrieve();
+  public ResponseEntity<List<BookingEntity>> retrieve(
+    @Parameter(description = "RSQL filter over booking_id, booking_reference, status, lead_pax_id",
+      example = "status==CONFIRMED;booking_reference=like=ORD")
+    @RequestParam(value = "filter", required = false) String filter,
+    @Parameter(description = "Index of the first result (0-based). Paging applies when offset or limit is given.", example = "0")
+    @RequestParam(value = "offset", required = false) Integer offset,
+    @Parameter(description = "Page size, 1 to 200", example = "20")
+    @RequestParam(value = "limit", required = false) Integer limit,
+    @Parameter(description = "Sort by booking_reference and/or status", example = "status,asc;booking_reference,desc")
+    @RequestParam(value = "sort", required = false) String sort
+  ) {
+    log.debug("Retrieving bookings [filter={}, offset={}, limit={}, sort={}]", filter, offset, limit, sort);
+    PageResult<BookingEntity> page = bookingProjectionService.retrieve(filter, offset, limit, sort);
     return ResponseEntity
       .ok()
       .cacheControl(CacheControl.noCache())
-      .body(bookings);
+      .header(TOTAL_COUNT_HEADER, String.valueOf(page.totalElements()))
+      .body(page.content());
   }
 
 }

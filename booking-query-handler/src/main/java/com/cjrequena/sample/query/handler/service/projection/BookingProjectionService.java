@@ -4,9 +4,15 @@ import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundExcept
 import com.cjrequena.sample.query.handler.domain.exception.BookingProjectionException;
 import com.cjrequena.sample.query.handler.domain.mapper.PaxMapper;
 import com.cjrequena.sample.query.handler.domain.mapper.ProductMapper;
+import com.cjrequena.sample.query.handler.domain.model.PageResult;
 import com.cjrequena.sample.query.handler.domain.model.aggregate.Booking;
+import com.cjrequena.sample.query.handler.domain.model.enums.BookingStatus;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.repository.BookingProjectionRepository;
+import com.cjrequena.sample.query.handler.service.sse.BookingUpdateMessage;
+import com.cjrequena.sample.query.handler.service.base.MongoBaseService;
+import com.cjrequena.sample.query.handler.service.sse.BookingUpdatePublisher;
+import com.cjrequena.sample.query.handler.shared.common.rsql.FilterField;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -15,9 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -41,11 +49,25 @@ import java.util.UUID;
 @Service
 @Log4j2
 @AllArgsConstructor(onConstructor = @__(@Autowired))
-public class BookingProjectionService {
+public class BookingProjectionService extends MongoBaseService<BookingEntity> {
+
+  private static final Map<String, FilterField> FILTERABLE = Map.of(
+    "booking_id", FilterField.of("bookingId", UUID::fromString),
+    "booking_reference", FilterField.text("bookingReference"),
+    "status", FilterField.of("status", BookingStatus::valueOf),
+    "lead_pax_id", FilterField.of("leadPaxId", UUID::fromString)
+  );
+
+  private static final Map<String, String> SORTABLE = Map.of(
+    "booking_reference", "bookingReference",
+    "status", "status"
+  );
 
   private final BookingProjectionRepository bookingProjectionRepository;
   private final PaxMapper paxMapper;
   private final ProductMapper productMapper;
+  private final BookingUpdatePublisher bookingUpdatePublisher;
+  private final MongoTemplate mongoTemplate;
 
   /**
    * Saves a booking aggregate to the projection database and updates cache.
@@ -93,6 +115,7 @@ public class BookingProjectionService {
       BookingEntity savedEntity = bookingProjectionRepository.save(booking);
 
       log.info("Booking saved successfully to MongoDB ProjectionDB: bookingId={}", savedEntity.getBookingId());
+      bookingUpdatePublisher.publish(new BookingUpdateMessage(savedEntity.getBookingId().toString(), String.valueOf(savedEntity.getStatus())));
       return savedEntity;
 
     } catch (Exception ex) {
@@ -130,18 +153,19 @@ public class BookingProjectionService {
   }
 
   /**
-   * Retrieves all bookings.
+   * Retrieves bookings matching an optional RSQL filter, sorted and optionally paged.
    * <p>
-   * Note: This method is not cached as list operations can be expensive to cache
-   * and may return stale data. Consider implementing pagination and caching
-   * individual pages if needed.
+   * Not cached: list results go stale as soon as any booking changes.
    * </p>
    *
-   * @return all booking entities
+   * @param filter RSQL expression over {@code booking_id, booking_reference, status, lead_pax_id}; null for all
+   * @param offset index of the first result; paging applies when offset or limit is given
+   * @param limit  page size, 1..{@value MongoBaseService#MAX_LIMIT}
+   * @param sort   e.g. {@code status,asc;booking_reference,desc}
+   * @throws IllegalArgumentException on an invalid filter, sort or paging parameter
    */
-  public List<BookingEntity> retrieve() {
-    log.debug("Retrieving all bookings from database");
-    return this.bookingProjectionRepository.findAll();
+  public PageResult<BookingEntity> retrieve(String filter, Integer offset, Integer limit, String sort) {
+    return findPage(filter, offset, limit, sort);
   }
 
   /**
@@ -170,4 +194,23 @@ public class BookingProjectionService {
     log.debug("Evicting all bookings from cache");
   }
 
+  @Override
+  protected MongoTemplate getMongoTemplate() {
+    return mongoTemplate;
+  }
+
+  @Override
+  protected Class<BookingEntity> getEntityClass() {
+    return BookingEntity.class;
+  }
+
+  @Override
+  protected Map<String, FilterField> getFilterableFields() {
+    return FILTERABLE;
+  }
+
+  @Override
+  protected Map<String, String> getSortableFields() {
+    return SORTABLE;
+  }
 }
