@@ -2,61 +2,33 @@
 
 ## Abstract
 
-The Booking Query Handler is the read-side microservice in the CQRS architecture, responsible for serving all booking queries with optimized read performance. It maintains denormalized projections in MongoDB and PostgreSQL that are synchronized by polling the Event Store, enabling fast and efficient query operations without impacting the write side.
-
-This service polls the Event Store for new events, processes them to update projections, and provides RESTful query endpoints with support for filtering, pagination, and sorting.
+The Booking Query Handler is the read side of the CQRS architecture. It polls the PostgreSQL event store, projects booking events into MongoDB, and serves queries with RSQL filtering, sorting and paging. It pushes live updates to clients over Server-Sent Events and isolates failing projections in a dead-letter collection that operators can replay or discard.
 
 ---
 
 ## Overview
 
-The Query Handler implements the read model in a CQRS architecture, focusing on query optimization and read performance. It maintains eventually consistent projections that are optimized for specific query patterns.
-
 ### Key Features
 
-- **Optimized Read Model**: Denormalized MongoDB and PostgreSQL projections for fast queries
-- **Event Store Polling**: ScheduledEventHandlerService polls Event Store for new events
-- **Event-Driven Synchronization**: Processes events to update projections
-- **Reactive Programming**: Non-blocking operations using Spring WebFlux
-- **RESTful Query API**: Well-documented REST endpoints with OpenAPI/Swagger
-- **Flexible Querying**: Support for filtering, pagination, and sorting
-- **Eventual Consistency**: Projections updated asynchronously from Event Store
-- **Caching**: Multi-level caching strategy for improved performance
-- **Reactive MongoDB**: Non-blocking database operations
-- **Health Monitoring**: Actuator endpoints for health checks and metrics
-- **API Versioning**: Header-based versioning for backward compatibility
-- **Configurable Polling**: Adjustable polling intervals and batch sizes
+- **Event Store Polling**: `ScheduledEventHandlerService` reads new events every `PT6S`
+- **MongoDB Projections**: Denormalized `booking` documents (Transfer and Hotel products)
+- **RSQL Filtering**: Allowlisted filter and sort fields, optional offset/limit paging
+- **Live Updates (SSE)**: `GET /bookings/stream`, fanned out across instances over Redis pub/sub, with local-broadcast fallback when Redis is down
+- **Projection Dead Letter**: Per-aggregate failure classification; non-transient failures are recorded and the subscription keeps going
+- **Redis Cache**: Booking-by-id lookups cached and refreshed on projection writes
+- **Security**: Optional Cognito JWT resource server
+- **OpenAPI**: Swagger UI and a static spec in [`openapi/openapi.yaml`](openapi/openapi.yaml)
 
 ### Technology Stack
 
-**Core:**
-- Java 21
-- Spring Boot 3.4.1
-- Spring WebFlux (Reactive)
-- Spring Data MongoDB Reactive
-
-**Database:**
-- MongoDB 8 (Projections)
-- PostgreSQL 17 (Optional Projections)
-- Reactive MongoDB Driver
-
-**Event Store Access:**
-- PostgreSQL 17 (Event Store - Read Only)
-- Scheduled Polling Service
-
-**Messaging (Optional):**
-- Apache Kafka (for external event publishing only)
-- Spring Cloud Stream
-
-**Caching:**
-- Caffeine (Local Cache)
-- Spring Cache Abstraction
-
-**Development:**
-- Lombok
-- MapStruct
-- JUnit 5
-- Mockito
+- Java 25, Spring Boot 4.1.2, Spring Web MVC (blocking)
+- Jackson 3
+- Spring Data MongoDB
+- Spring Data JPA (event store read access via `es-core`)
+- Spring Data Redis (cache + pub/sub)
+- RSQL Parser 2.1.0
+- Spring Security OAuth2 Resource Server
+- Lombok, MapStruct, JUnit 5, Mockito
 
 ---
 
@@ -66,129 +38,40 @@ The Query Handler implements the read model in a CQRS architecture, focusing on 
 
 ```
 booking-query-handler/
-├── controller/              # REST API Layer
-│   ├── BookingQueryController
-│   ├── dto/                # Data Transfer Objects
-│   └── exception/          # Exception Handling
-├── service/                # Application Service Layer
-│   ├── query/             # Query Services
-│   └── projection/        # Projection Services
-├── domain/                 # Domain Layer
-│   ├── model/
-│   │   ├── entity/        # MongoDB Entities
-│   │   └── event/         # Domain Events (for consumption)
-│   ├── mapper/            # Domain Mappers
-│   └── exception/         # Domain Exceptions
-├── repository/             # Data Access Layer
-│   └── BookingRepository  # Reactive MongoDB Repository
-├── consumer/              # Event Consumers
-│   └── BookingEventConsumer
-├── configuration/          # Spring Configuration
-└── shared/                # Shared Utilities
+├── controller/          # BookingQueryController, BookingSSEController, DeadLetterProjectionController
+├── service/
+│   ├── base/            # BaseService: RSQL filter, sort, paging
+│   ├── event/           # ScheduledEventHandlerService, BookingEventHandler, DeadLetterProjectionService
+│   ├── projection/      # BookingProjectionService, BookingProjectionHandler
+│   └── sse/             # BookingSSEService, BookingUpdatePublisher/Subscriber
+├── persistence/mongodb/ # BookingEntity, DeadLetterProjectionEntity, repositories
+├── domain/              # Booking aggregate, events, value objects, PageResult
+├── configuration/       # Jackson, Web MVC, Mongo, Redis, security
+└── shared/common/       # RSQL criteria builder, sort utils, serializers
 ```
 
-### Request Flow
+### Projection Flow
 
-**Query Flow:**
 ```
-1. Client Request
-   ↓
-2. BookingQueryController
-   ↓
-3. Query Validation
-   ↓
-4. BookingQueryService
-   ↓
-5. BookingRepository (MongoDB Reactive)
-   ↓
-6. Cache Check (Caffeine)
-   ↓
-7. MongoDB Query
-   ↓
-8. Response Mapping
-   ↓
-9. Response to Client
+ScheduledEventHandlerService (poll, PT6S)
+  → BookingEventHandler
+      → AggregateLoader (snapshot + replay, es-core)
+      → BookingProjectionService.save(...)        # upsert MongoDB, refresh Redis cache
+      → BookingUpdatePublisher                    # Redis channel booking-query-handler:sse:booking-updates
+  ↳ on failure, per aggregate:
+      transient (DB/broker unreachable, timeouts) → rethrow, batch retried
+      anything else                               → dead_letter_projection (PENDING), continue
 ```
 
-**Event Processing Flow (when projections.handlers.enabled=true):**
+### SSE Fan-out
+
 ```
-1. ScheduledEventHandlerService (Polls Event Store)
-   ↓
-2. Fetch New Events from PostgreSQL Event Store
-   ↓
-3. BookingEventHandler
-   ↓
-4. Event Deserialization
-   ↓
-5. BookingProjectionService
-   ↓
-6. Projection Update Logic
-   ↓
-7. BookingRepository (MongoDB)
-   ↓
-8. PostgreSQL Projection Repository (Optional)
-   ↓
-9. Cache Invalidation
-   ↓
-10. Projection Updated
+Projection write → Redis pub/sub → BookingUpdateSubscriber (every instance) → BookingSSEService → clients
 ```
 
-### Projection Model
-
-**Booking Projection Entity:**
-```java
-@Document(collection = "bookings")
-public class BookingEntity {
-    @Id
-    private String id;
-    private UUID bookingId;
-    private String bookingReference;
-    private BookingStatus status;
-    private List<PaxEntity> paxes;
-    private UUID leadPaxId;
-    private List<ProductEntity> products;
-    private Map<String, Object> metadata;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long version;
-}
-```
-
-**Projection Synchronization:**
-- Events polled from PostgreSQL Event Store
-- ScheduledEventHandlerService runs at configured intervals
-- Projections updated in real-time or near real-time
-- Eventual consistency model
-- Idempotent event processing
-- Configurable batch size and polling frequency
-
-### Key Components
-
-**1. Booking Query Service**
-- Retrieves bookings by ID
-- Lists bookings with pagination
-- Searches bookings by criteria
-- Applies caching strategies
-
-**2. Booking Projection Service**
-- Processes domain events from Event Store
-- Updates MongoDB projections
-- Updates PostgreSQL projections (optional)
-- Handles event ordering
-- Ensures idempotency
-
-**3. Scheduled Event Handler Service**
-- Polls PostgreSQL Event Store for new events
-- Configurable polling interval
-- Batch processing support
-- Tracks last processed event
-- Error handling and retry logic
-
-**4. Booking Repository**
-- Reactive MongoDB operations
-- Custom query methods
-- Pagination support
-- Sorting capabilities
+- Event name: `booking-update`, data: `{ "booking_id": "...", "status": "..." }` — a hint to refetch the booking
+- A `keepalive` comment is sent every 15s so proxies don't drop idle connections
+- If Redis is unavailable, updates are broadcast to the local instance's clients only
 
 ---
 
@@ -196,614 +79,170 @@ public class BookingEntity {
 
 ### Prerequisites
 
-- Java 21+
+- Java 25
 - Maven 3.9+
-- MongoDB 8 (for projections)
-- PostgreSQL 17 (for Event Store access - read only)
 
-### Compilation Steps
+### Build
 
 ```bash
-# Navigate to query handler directory
-cd booking-query-handler
-
-# Clean and compile
-mvn clean compile
-
-# Run tests
-mvn test
-
-# Package (creates executable JAR)
-mvn clean package
-
-# Skip tests for faster build
-mvn clean package -DskipTests
-
-# Install to local Maven repository
-mvn clean install
+# From the repository root
+mvn -pl booking-query-handler -am clean verify
+mvn -pl booking-query-handler -am clean package -DskipTests
 ```
 
-### Build Artifacts
-
-After successful build:
-- `target/booking-query-handler.jar` - Standard JAR
-- `target/booking-query-handler-exec.jar` - Executable JAR with dependencies
+Artifact: `target/booking-query-handler-exec.jar`
 
 ---
 
 ## How to Run
 
-### Option 1: Using Maven (Development)
+### Maven
 
-**Step 1: Start Infrastructure**
 ```bash
-cd ../.docker
-docker-compose up -d postgres mongo
+cd .docker && docker compose up -d postgres mongo redis
+cd .. && mvn -pl booking-query-handler spring-boot:run
 ```
 
-**Step 2: Run Application**
+The command handler (or Flyway in it) must have created the `eventstore` schema first.
+
+### JAR
+
 ```bash
-cd booking-query-handler
-mvn spring-boot:run
+java -jar booking-query-handler/target/booking-query-handler-exec.jar
 ```
 
-**Step 3: Verify**
+### Docker
+
 ```bash
-curl http://localhost:8081/actuator/health
-```
-
-### Option 2: Using JAR (Production-like)
-
-**Step 1: Build JAR**
-```bash
-mvn clean package
-```
-
-**Step 2: Run JAR**
-```bash
-java -jar target/booking-query-handler-exec.jar
-```
-
-**With Custom Configuration:**
-```bash
-java -jar target/booking-query-handler-exec.jar \
-  --spring.profiles.active=prod \
-  --server.port=8081 \
-  --spring.data.mongodb.uri=mongodb://localhost:27017/bookings
-```
-
-### Option 3: Using Docker
-
-**Build Docker Image:**
-```bash
-docker build -t booking-query-handler:latest .
-```
-
-**Run Container:**
-```bash
-docker run -p 8081:8081 \
-  -e SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/bookings \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/eventstore \
-  booking-query-handler:latest
+mvn -pl booking-query-handler -am clean package -DskipTests
+cd .docker && docker compose up -d --build booking-query-handler
 ```
 
 ### Configuration
 
-**application.yml:**
-```yaml
-server:
-  port: 8081
+| Property / Variable | Default | Description |
+|---------------------|---------|-------------|
+| `SERVER_PORT` | `7080` | HTTP port |
+| `SPRING_PROFILES_ACTIVE` | `local` | Active profile |
+| `POSTGRES_URL` | `jdbc:postgresql://localhost:5432/postgres` | Event store (schema `eventstore`) |
+| `MONGODB_URI` | `mongodb://root:root@127.0.0.1:27017/booking?authSource=admin` | Projection DB (`spring.mongodb.*`) |
+| `REDIS_HOST` | `localhost` | Redis (cache + SSE fan-out) |
+| `COGNITO_ENABLED` / `COGNITO_ISSUER_URI` | `false` / empty | JWT authentication |
+| `projections.handlers.enabled` | `true` | Write MongoDB projections from this service |
+| `eventstore.subscription.enabled` | `true` | Run the polling subscription |
+| `eventstore.subscription.name` | `bqh-mongo-projection-${random.int(100)}` | Subscription name (offset tracking) |
+| `eventstore.subscription.polling-interval` | `PT6S` | Poll interval |
 
-spring:
-  application:
-    name: booking-query-handler
-  
-  # MongoDB for projections
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/bookings
-      auto-index-creation: true
-  
-  # PostgreSQL Event Store (read-only access)
-  datasource:
-    url: jdbc:postgresql://localhost:5432/eventstore
-    username: postgres
-    password: postgres
-    hikari:
-      maximum-pool-size: 5
-      read-only: true
+> The local subscription name is randomized, so each start re-projects from the beginning. Use a fixed name in deployed environments.
 
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=1000,expireAfterWrite=10m
+### Verify
 
-# Projection configuration
-projections:
-  handlers:
-    enabled: true  # Enable to poll Event Store and update projections
-
-# Event polling configuration
-event-store:
-  polling:
-    enabled: true
-    interval: 5000  # Poll every 5 seconds
-    batch-size: 100  # Process 100 events per batch
-
-logging:
-  level:
-    com.cjrequena.sample.query.handler: DEBUG
-    org.springframework.data.mongodb: DEBUG
-```
-
-### Verify the Service
-
-**Health Check:**
 ```bash
-curl http://localhost:8081/actuator/health
-```
-
-**Swagger UI:**
-```
-http://localhost:8081/swagger-ui.html
-```
-
-**Query Booking Example:**
-```bash
-curl http://localhost:8081/query-handler/api/bookings/{bookingId} \
-  -H "Accept-Version: application/vnd.booking-query-handler.v1+json"
-```
-
-**List Bookings Example:**
-```bash
-curl "http://localhost:8081/query-handler/api/bookings?page=0&size=10&sort=createdAt,desc" \
-  -H "Accept-Version: application/vnd.booking-query-handler.v1+json"
+curl http://localhost:7080/management/healthcheck
+open http://localhost:7080/swagger-ui.html
 ```
 
 ---
 
 ## API Endpoints
 
-### Base URL
-`http://localhost:8081/query-handler/api/bookings`
+**Base URL:** `http://localhost:7080/query-handler/api`
+**Required header:** `Accept-Version: application/vnd.booking-query-handler.v1`
 
-### Required Header
-`Accept-Version: application/vnd.booking-query-handler.v1+json`
+### Bookings
 
-### Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/bookings/{bookingId}` | Booking projection by ID (`Cache-Control: private, max-age=600`) |
+| GET | `/bookings` | List bookings |
+| GET | `/bookings/stream` | SSE stream; optional `booking_id` to follow one booking |
 
-#### 1. Get Booking by ID
-```http
-GET /{bookingId}
+**`GET /bookings` query parameters:**
 
-Response: 200 OK
-{
-  "booking_id": "uuid",
-  "booking_reference": "BK-2026-001",
-  "status": "CONFIRMED",
-  "paxes": [
-    {
-      "pax_id": "uuid",
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "john@example.com",
-      "phone": "+1234567890",
-      "age": 30,
-      "document_type": "PASSPORT",
-      "document_number": "AB123456",
-      "pax_type": "ADULT"
-    }
-  ],
-  "lead_pax_id": "uuid",
-  "products": [
-    {
-      "product_id": "prod-001",
-      "product_name": "Flight Ticket",
-      "product_type": "FLIGHT",
-      "price": 299.99,
-      "currency": "USD"
-    }
-  ],
-  "metadata": {
-    "source": "web",
-    "channel": "direct"
-  },
-  "created_at": "2026-03-04T10:30:00Z",
-  "updated_at": "2026-03-04T11:00:00Z",
-  "version": 2
-}
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `filter` | RSQL over `booking_id`, `booking_reference`, `status`, `lead_pax_id` | `status==CONFIRMED;booking_reference==BK*` |
+| `sort` | `booking_reference` and/or `status` | `status,asc;booking_reference,desc` |
+| `offset` | Zero-based index of the first result (`page` = `offset / limit`) | `0` |
+| `limit` | Page size, 1–200 | `10` |
+
+- Operators: `==`, `!=`, `=in=`, `=out=`, `=gt=`, `=ge=`, `=lt=`, `=le=`, and `=like=` (case-insensitive substring, text fields only). `==` with `*` on a text field is a case-insensitive wildcard.
+- Without `offset` and `limit` the response is a JSON array. With both, it is a page envelope:
+
+```json
+{ "content": [ ... ], "total_elements": 42, "total_pages": 5, "page": 0, "size": 10 }
 ```
 
-#### 2. List All Bookings
-```http
-GET /?page=0&size=10&sort=createdAt,desc
+```bash
+curl -G http://localhost:7080/query-handler/api/bookings \
+  -H "Accept-Version: application/vnd.booking-query-handler.v1" \
+  --data-urlencode "filter=status==CONFIRMED" \
+  --data-urlencode "sort=booking_reference,asc" \
+  -d offset=0 -d limit=10
 
-Response: 200 OK
-{
-  "content": [
-    {
-      "booking_id": "uuid",
-      "booking_reference": "BK-2026-001",
-      "status": "CONFIRMED",
-      ...
-    }
-  ],
-  "page": {
-    "size": 10,
-    "number": 0,
-    "total_elements": 100,
-    "total_pages": 10
-  }
-}
+curl -N "http://localhost:7080/query-handler/api/bookings/stream?booking_id={bookingId}" \
+  -H "Accept-Version: application/vnd.booking-query-handler.v1"
 ```
 
-#### 3. Search Bookings
-```http
-GET /search?status=CONFIRMED&leadPaxEmail=john@example.com
+### Dead-Letter Projections
 
-Response: 200 OK
-{
-  "content": [
-    {
-      "booking_id": "uuid",
-      "booking_reference": "BK-2026-001",
-      "status": "CONFIRMED",
-      ...
-    }
-  ]
-}
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/dead-letter-projections` | List; filters `status`, `aggregate_type`; `offset`, `limit` (default 20, max 200), `sort` |
+| GET | `/dead-letter-projections/{id}` | Get one |
+| POST | `/dead-letter-projections/{id}/replay` | Re-project the aggregate from the event store |
+| POST | `/dead-letter-projections/{id}/discard` | Close without replaying |
 
-#### 4. Get Booking by Reference
-```http
-GET /reference/{bookingReference}
-
-Response: 200 OK
-{
-  "booking_id": "uuid",
-  "booking_reference": "BK-2026-001",
-  ...
-}
-```
-
-### Query Parameters
-
-**Pagination:**
-- `page` - Page number (default: 0)
-- `size` - Page size (default: 20, max: 100)
-- `sort` - Sort field and direction (e.g., `createdAt,desc`)
-
-**Filtering:**
-- `status` - Filter by booking status
-- `leadPaxEmail` - Filter by lead passenger email
-- `createdAfter` - Filter by creation date (ISO 8601)
-- `createdBefore` - Filter by creation date (ISO 8601)
+**Statuses:** `PENDING` (recorded) → `REPLAYED` (success) or `FAILED` (replay failed again, can be retried) · `DISCARDED` (closed by operator). Replaying or discarding a closed entry returns `409`.
 
 ### Error Responses
 
-```json
-{
-  "timestamp": "2026-03-04T15:30:00",
-  "status": 404,
-  "error_code": "Not Found",
-  "message": "Booking not found with ID: 123e4567-e89b-12d3-a456-426614174000"
-}
-```
-
-**HTTP Status Codes:**
-- `200 OK` - Successful query
-- `400 Bad Request` - Invalid query parameters
-- `404 Not Found` - Booking not found
-- `500 Internal Server Error` - Unexpected error
-
----
-
-## Event Store Polling
-
-### Polling Configuration
-
-The Query Handler polls the PostgreSQL Event Store to fetch new events and update projections.
-
-**Configuration:**
-```yaml
-projections:
-  handlers:
-    enabled: true  # Enable projection updates
-
-event-store:
-  polling:
-    enabled: true
-    interval: 5000      # Poll every 5 seconds
-    batch-size: 100     # Process 100 events per batch
-    initial-delay: 10000 # Wait 10 seconds before first poll
-```
-
-### Scheduled Event Handler Service
-
-**Implementation:**
-```java
-@Service
-@EnableScheduling
-public class ScheduledEventHandlerService {
-    
-    @Scheduled(fixedDelayString = "${event-store.polling.interval:5000}")
-    public void pollAndProcessEvents() {
-        // 1. Fetch last processed event ID
-        Long lastProcessedEventId = getLastProcessedEventId();
-        
-        // 2. Query Event Store for new events
-        List<EventEntity> newEvents = eventStoreRepository
-            .findByIdGreaterThanOrderByIdAsc(
-                lastProcessedEventId, 
-                PageRequest.of(0, batchSize)
-            );
-        
-        // 3. Process each event
-        newEvents.forEach(event -> {
-            bookingEventHandler.handle(event);
-            updateLastProcessedEventId(event.getId());
-        });
-    }
-}
-```
-
-### Event Processing
-
-**Event Handler:**
-```java
-@Component
-public class BookingEventHandler {
-    
-    public void handle(EventEntity eventEntity) {
-        Event event = eventMapper.toEvent(eventEntity);
-        
-        switch (event.getEventType()) {
-            case "BookingCreatedEvent":
-                projectionService.handleBookingCreated((BookingCreatedEvent) event);
-                break;
-            case "BookingPlacedEvent":
-                projectionService.handleBookingPlaced((BookingPlacedEvent) event);
-                break;
-            case "BookingConfirmedEvent":
-                projectionService.handleBookingConfirmed((BookingConfirmedEvent) event);
-                break;
-            case "BookingCancelledEvent":
-                projectionService.handleBookingCancelled((BookingCancelledEvent) event);
-                break;
-            case "BookingCompletedEvent":
-                projectionService.handleBookingCompleted((BookingCompletedEvent) event);
-                break;
-            case "BookingExpiredEvent":
-                projectionService.handleBookingExpired((BookingExpiredEvent) event);
-                break;
-        }
-    }
-}
-```
-
-**Projection Update:**
-```java
-@Service
-public class BookingProjectionService {
-    
-    public void handleBookingCreated(BookingCreatedEvent event) {
-        BookingEntity entity = new BookingEntity();
-        entity.setBookingId(event.getAggregateId());
-        entity.setStatus(BookingStatus.CREATED);
-        entity.setPaxes(mapPaxes(event.getData().paxes()));
-        entity.setProducts(mapProducts(event.getData().products()));
-        entity.setCreatedAt(LocalDateTime.now());
-        entity.setVersion(event.getAggregateVersion());
-        
-        repository.save(entity).subscribe();
-    }
-    
-    public void handleBookingPlaced(BookingPlacedEvent event) {
-        repository.findByBookingId(event.getAggregateId())
-            .flatMap(entity -> {
-                entity.setStatus(BookingStatus.PLACED);
-                entity.setUpdatedAt(LocalDateTime.now());
-                entity.setVersion(event.getAggregateVersion());
-                return repository.save(entity);
-            })
-            .subscribe();
-    }
-    
-    // ... other event handlers
-}
-```
-
-### Error Handling
-
-- **Retry Strategy**: Automatic retry with exponential backoff
-- **Dead Letter Storage**: Failed events logged for manual review
-- **Idempotency**: Events processed idempotently using event ID and version
-- **Monitoring**: Event processing metrics exposed via Actuator
-- **Circuit Breaker**: Stops polling if too many consecutive failures
-
-### Monitoring
-
-**Metrics Available:**
-- `event.store.polling.last.processed.id` - Last processed event ID
-- `event.store.polling.batch.size` - Number of events in last batch
-- `event.store.polling.processing.time` - Time to process last batch
-- `event.store.polling.errors` - Number of processing errors
-
-**Health Check:**
-```bash
-curl http://localhost:8081/actuator/health/eventStorePolling
-```
-
----
-
-## Event Consumption (Deprecated - Kafka)
-
-### Kafka Configuration (Optional - For External Systems Only)
-
-**Note:** Kafka is NOT used for internal projection synchronization. It's only used if you want to publish events to external systems.
-
-**Topic:** `booking-events` (external)
-
-**Event Types Published:**
-- `BookingCreatedEvent`
-- `BookingPlacedEvent`
-- `BookingConfirmedEvent`
-- `BookingCancelledEvent`
-- `BookingCompletedEvent`
-- `BookingExpiredEvent`
-
-**Note:** This Kafka configuration is deprecated for internal projection synchronization. The Query Handler now polls the Event Store directly. Kafka is only used for publishing events to external systems.
-
----
-
-## Caching Strategy
-
-### Cache Configuration
-
-**Cache Provider:** Caffeine
-
-**Cache Specifications:**
-- Maximum Size: 1000 entries
-- Expiration: 10 minutes after write
-- Eviction Policy: LRU (Least Recently Used)
-
-### Cached Operations
-
-```java
-@Cacheable(value = "bookings", key = "#bookingId")
-public Mono<BookingDTO> findByBookingId(UUID bookingId) {
-    return repository.findByBookingId(bookingId)
-        .map(mapper::toDTO);
-}
-
-@CacheEvict(value = "bookings", key = "#bookingId")
-public void evictCache(UUID bookingId) {
-    // Cache evicted on projection update
-}
-```
-
-### Cache Invalidation
-
-- Automatic invalidation on projection updates
-- Manual invalidation via Actuator endpoint
-- TTL-based expiration
+| Status | Cause |
+|--------|-------|
+| 400 | Invalid filter, sort, offset or limit |
+| 401 | Missing/invalid JWT (only when Cognito is enabled) |
+| 404 | Booking or dead letter not found, or unknown path |
+| 409 | Invalid dead-letter status transition |
+| 500 | Unexpected error |
+| 503 | Downstream dependency unavailable |
 
 ---
 
 ## Testing
 
-### Test Coverage
-
-Tests are primarily focused on the command handler. Query handler tests would include:
-
-**Recommended Test Structure:**
-```
-src/test/java/
-├── controller/
-│   └── BookingQueryControllerTest.java
-├── service/
-│   ├── BookingQueryServiceTest.java
-│   └── BookingProjectionServiceTest.java
-├── repository/
-│   └── BookingRepositoryTest.java
-└── consumer/
-    └── BookingEventConsumerTest.java
-```
-
-### Running Tests
+| Test | Covers |
+|------|--------|
+| `RsqlMongoCriteriaBuilderTest` | RSQL → Mongo `Criteria` translation |
+| `SortUtilsTest` | Sort parsing and allowlisting |
+| `BookingEventHandlerTest` | Transient vs. dead-letter failure classification |
+| `DeadLetterProjectionServiceTest` | Replay and discard |
+| `BookingProjectionServiceTest` | Save + publish, filtering and paging |
+| `BookingUpdateFanOutTest` | Redis SSE fan-out and local fallback |
+| `GlobalExceptionHandlerTest` | Error mapping |
 
 ```bash
-# All tests
-mvn test
-
-# Specific test class
-mvn test -Dtest=BookingQueryServiceTest
-
-# With coverage report
-mvn clean verify
-
-# View coverage report
-open target/site/jacoco/index.html
+mvn -pl booking-query-handler -am verify
+open booking-query-handler/target/site/jacoco/index.html
 ```
 
 ---
 
 ## Additional Resources
 
-### API Documentation
+- **Swagger UI**: http://localhost:7080/swagger-ui.html
+- **OpenAPI**: http://localhost:7080/v3/api-docs · [static spec](openapi/openapi.yaml)
+- **Actuator**: http://localhost:7080/management (health: `/management/healthcheck`)
+- **Mongo Express**: http://localhost:8081
 
-- **Swagger UI**: http://localhost:8081/swagger-ui.html
-- **OpenAPI Spec**: http://localhost:8081/v3/api-docs
-- **OpenAPI YAML**: http://localhost:8081/v3/api-docs.yaml
+### MongoDB Collections (database `booking`)
 
-### Monitoring & Management
-
-- **Health**: http://localhost:8081/actuator/health
-- **Info**: http://localhost:8081/actuator/info
-- **Metrics**: http://localhost:8081/actuator/metrics
-- **Prometheus**: http://localhost:8081/actuator/prometheus
-- **Cache Stats**: http://localhost:8081/actuator/caches
-
-### MongoDB Collections
-
-**Bookings Collection:**
-```javascript
-db.bookings.createIndex({ "booking_id": 1 }, { unique: true })
-db.bookings.createIndex({ "booking_reference": 1 }, { unique: true })
-db.bookings.createIndex({ "status": 1 })
-db.bookings.createIndex({ "lead_pax_id": 1 })
-db.bookings.createIndex({ "created_at": -1 })
-db.bookings.createIndex({ "paxes.email": 1 })
-```
-
-**Sample Document:**
-```json
-{
-  "_id": ObjectId("..."),
-  "booking_id": "123e4567-e89b-12d3-a456-426614174000",
-  "booking_reference": "BK-2026-001",
-  "status": "CONFIRMED",
-  "paxes": [
-    {
-      "pax_id": "...",
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "john@example.com",
-      ...
-    }
-  ],
-  "lead_pax_id": "...",
-  "products": [...],
-  "metadata": {...},
-  "created_at": ISODate("2026-03-04T10:30:00Z"),
-  "updated_at": ISODate("2026-03-04T11:00:00Z"),
-  "version": 2
-}
-```
-
-### External Links
-
-- [CQRS Pattern](https://martinfowler.com/bliki/CQRS.html)
-- [Event-Driven Architecture](https://martinfowler.com/articles/201701-event-driven.html)
-- [Spring WebFlux](https://docs.spring.io/spring-framework/reference/web/webflux.html)
-- [Reactive MongoDB](https://docs.spring.io/spring-data/mongodb/reference/mongodb/reactive-mongodb.html)
-- [Apache Kafka](https://kafka.apache.org/documentation/)
+| Collection | Content |
+|------------|---------|
+| `booking` | Booking projections with embedded paxes and products |
+| `dead_letter_projection` | `aggregate_id`, `aggregate_type`, `status`, `attempts`, `error_message`, `last_error`, timestamps |
 
 ---
 
 ## License
 
-This project is licensed under the terms specified in the LICENSE file.
-
----
-
-## Contact & Support
-
-For questions, issues, or contributions, please refer to the project repository.
-
-**Module Statistics:**
-- Lines of Code: ~5,000+
-- API Endpoints: 4+ query endpoints
-- Event Types: 6 event types consumed
-- Collections: 1 (bookings)
-- Indexes: 6 MongoDB indexes
+This project is licensed under the terms specified in the [LICENSE](../LICENSE) file.

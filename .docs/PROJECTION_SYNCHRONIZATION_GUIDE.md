@@ -279,9 +279,6 @@ public class BookingEventHandler {
             case "BookingCreatedEvent":
                 projectionService.handleBookingCreated((BookingCreatedEvent) event);
                 break;
-            case "BookingPlacedEvent":
-                projectionService.handleBookingPlaced((BookingPlacedEvent) event);
-                break;
             case "BookingConfirmedEvent":
                 projectionService.handleBookingConfirmed((BookingConfirmedEvent) event);
                 break;
@@ -339,11 +336,11 @@ public class BookingProjectionService {
     }
     
     @Transactional
-    public void handleBookingPlaced(BookingPlacedEvent event) {
+    public void handleBookingConfirmed(BookingConfirmedEvent event) {
         // Update existing projection
         mongoRepository.findByBookingId(event.getAggregateId())
             .flatMap(entity -> {
-                entity.setStatus(BookingStatus.PLACED);
+                entity.setStatus(BookingStatus.CONFIRMED);
                 entity.setUpdatedAt(LocalDateTime.now());
                 entity.setVersion(event.getAggregateVersion());
                 

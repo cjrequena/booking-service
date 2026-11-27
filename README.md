@@ -2,64 +2,69 @@
 
 ## Abstract
 
-The Booking Service is a comprehensive microservices-based system implementing Event Sourcing and CQRS (Command Query Responsibility Segregation) patterns for managing booking operations. The system is designed to handle high-volume booking transactions with strong consistency guarantees, complete audit trails, and optimized read/write performance through separated command and query responsibilities.
+The Booking Service is a microservices-based system implementing Event Sourcing and CQRS (Command Query Responsibility Segregation) for managing booking operations. It provides strong consistency on the write side, a complete audit trail, and an independently scalable read side.
 
-This project demonstrates enterprise-grade architecture patterns including Domain-Driven Design (DDD), Event Sourcing, CQRS, reactive programming, and event-driven communication using Apache Kafka.
+The project demonstrates Domain-Driven Design (DDD), Event Sourcing, CQRS, live read-model updates over Server-Sent Events, and event-driven integration through Apache Kafka using CloudEvents.
 
 ---
 
 ## Overview
 
-The Booking Service is split into two independent microservices:
+The repository is a Maven multi-module build:
 
-1. **booking-command-handler**: Handles all write operations (commands) and maintains the event store
-2. **booking-query-handler**: Handles all read operations (queries) with optimized projections
+| Module | Role |
+|--------|------|
+| **es-core** | Shared event-sourcing library: event store, snapshots, subscriptions, `AggregateLoader`, Flyway migrations for the event store schema |
+| **booking-command-handler** | Write side: validates commands, applies them to the `Booking` aggregate, appends events to the event store, publishes events to Kafka |
+| **booking-query-handler** | Read side: projects events into MongoDB, serves queries (RSQL filtering, sorting, paging), streams live updates via SSE, manages projection dead letters |
 
 ### Key Features
 
-- **Event Sourcing**: Complete audit trail of all booking state changes stored as immutable events
-- **CQRS Pattern**: Separated read and write models for optimal performance and scalability
-- **Domain-Driven Design**: Rich domain model with aggregates, value objects, and domain events
-- **Reactive Programming**: Non-blocking, asynchronous operations using Spring WebFlux
-- **Event-Driven Architecture**: Asynchronous communication between services via Apache Kafka
-- **Optimistic Concurrency Control**: Prevents lost updates in concurrent scenarios
-- **Snapshot Support**: Configurable snapshot strategy for performance optimization
-- **Projection Synchronization**: Automatic projection updates from event stream
-- **RESTful APIs**: Well-documented REST endpoints with OpenAPI/Swagger
-- **Comprehensive Testing**: 141 unit tests with 100% pass rate
-- **Observability**: Distributed tracing, metrics, and health checks
-- **Code Quality**: SonarQube integration for continuous code quality monitoring
+- **Event Sourcing**: All booking state changes stored as immutable events in PostgreSQL
+- **CQRS**: Separate write and read models, each scaled independently
+- **Domain-Driven Design**: `Booking` aggregate with value objects for paxes and products (Transfer, Hotel)
+- **Optimistic Concurrency Control**: Aggregate version check on append prevents lost updates
+- **Snapshots**: Configurable per aggregate type (default: every 5 events)
+- **Shared Aggregate Loading**: One snapshot-or-replay path (`AggregateLoader`) used by command and event handlers
+- **Kafka Integration Events**: CloudEvents 1.0 (binary mode) published through a decoupled emitter, at-least-once
+- **Projection Dead Letter**: Failing aggregates are recorded and can be replayed or discarded without stalling the subscription
+- **Live Updates**: `GET /bookings/stream` (SSE), fanned out across instances over Redis pub/sub
+- **RSQL Filtering**: Allowlisted filter and sort fields, optional offset/limit paging
+- **Security**: Optional Cognito JWT resource server (disabled by default)
+- **OpenAPI**: Swagger UI per service, plus static specs in `*/openapi/openapi.yaml`
+- **Observability**: Actuator, Micrometer tracing, health checks
+- **Code Quality**: JaCoCo coverage gate and SonarQube integration
 
 ### Technology Stack
 
 **Core Framework:**
-- Java 21
-- Spring Boot 3.4.1
-- Spring Cloud 2024.0.0
-- Spring WebFlux (Reactive)
-- Spring Data JPA & MongoDB Reactive
+- Java 25
+- Spring Boot 4.1.2
+- Spring Cloud 2025.1.4
+- Spring Web MVC (blocking)
+- Jackson 3 (`tools.jackson`)
+- Spring Data JPA & Spring Data MongoDB
 
 **Event Store & Messaging:**
-- PostgreSQL 17 (Event Store)
-- Apache Kafka (Event Streaming)
-- MongoDB 8 (Read Model Projections)
+- PostgreSQL (Event Store, Flyway-managed schema)
+- Apache Kafka via Spring Cloud Stream (integration events)
+- MongoDB (Read Model Projections)
 
-**Caching & Performance:**
-- Redis (Distributed Cache)
-- Caffeine (Local Cache)
+**Caching & Fan-out:**
+- Redis (projection cache, SSE pub/sub)
 
-**Observability & Monitoring:**
-- Micrometer (Metrics)
+**Security:**
+- Spring Security OAuth2 Resource Server (AWS Cognito JWT)
+
+**Observability:**
 - Spring Boot Actuator
-- Distributed Tracing (Brave)
+- Micrometer Tracing
 
 **Development & Quality:**
 - Maven 3.9+
-- Lombok
-- MapStruct
-- JUnit 5
-- Mockito
-- SonarQube
+- Lombok, MapStruct
+- JUnit 5, Mockito, Testcontainers
+- JaCoCo, SonarQube
 - Docker & Docker Compose
 
 ---
@@ -68,302 +73,82 @@ The Booking Service is split into two independent microservices:
 
 ### High-Level Design
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Client Applications                      │
-└────────────┬────────────────────────────────────┬────────────────┘
-             │                                    │
-             │ Commands (POST/PUT/DELETE)         │ Queries (GET)
-             │                                    │
-             ▼                                    ▼
-┌────────────────────────────┐      ┌────────────────────────────┐
-│  booking-command-handler   │      │   booking-query-handler    │
-│  (Write Side - Port 8080)  │      │  (Read Side - Port 8081)   │
-│                            │      │                            │
-│  ┌──────────────────────┐ │      │  ┌──────────────────────┐ │
-│  │  REST Controllers    │ │      │  │  REST Controllers    │ │
-│  └──────────┬───────────┘ │      │  └──────────┬───────────┘ │
-│             │              │      │             │              │
-│  ┌──────────▼───────────┐ │      │  ┌──────────▼───────────┐ │
-│  │  Command Bus         │ │      │  │  Query Service       │ │
-│  └──────────┬───────────┘ │      │  └──────────┬───────────┘ │
-│             │              │      │             │              │
-│  ┌──────────▼───────────┐ │      │  ┌──────────▼───────────┐ │
-│  │  Domain Aggregates   │ │      │  │  MongoDB Reactive    │ │
-│  │  (Booking)           │ │      │  │  (Projections)       │ │
-│  └──────────┬───────────┘ │      │  └──────────▲───────────┘ │
-│             │              │      │             │              │
-│  ┌──────────▼───────────┐ │      │  ┌──────────┴───────────┐ │
-│  │  Event Store Service │ │      │  │  Projection Handler  │ │
-│  └──────────┬───────────┘ │      │  │  (Polls Events)      │ │
-│             │              │      │  └──────────┬───────────┘ │
-│  ┌──────────▼───────────┐ │      │             │              │
-│  │  PostgreSQL          │◄├──────┼─────────────┘              │
-│  │  (Event Store)       │ │      │  Scheduled Event Polling   │
-│  └──────────────────────┘ │      │                            │
-│                            │      └────────────────────────────┘
-│  Optional: Kafka Publisher│
-│  (External Boundaries)    │      ┌────────────────────────────┐
-│             │              │      │   Apache Kafka (Optional)  │
-│             └──────────────┼─────►│   External Event Stream    │
-└────────────────────────────┘      │   - booking-events         │
-                                    └────────────────────────────┘
-
-```
 ```mermaid
 graph TB
-    Client["🖥️ Client Applications"]
+    Client["Client Applications"]
 
-    Client -->|"Commands\n(POST/PUT/DELETE)"| RestCmd
-    Client -->|"Queries\n(GET)"| RestQuery
+    Client -->|"Commands (POST)"| RestCmd
+    Client -->|"Queries (GET) / SSE"| RestQuery
 
-    subgraph CMD["📝 booking-command-handler\n(Write Side - Port 8080)"]
+    subgraph CMD["booking-command-handler (Port 8080)"]
         direction TB
         RestCmd["REST Controllers"] --> CommandBus["Command Bus"]
-        CommandBus --> Aggregates["Domain Aggregates\n(Booking)"]
-        Aggregates --> EventStoreService["Event Store Service"]
-        EventStoreService --> PostgreSQL[("PostgreSQL\n(Event Store)")]
-        KafkaPublisher["Kafka Publisher\n(External Boundaries)"]
+        CommandBus --> Aggregates["Booking Aggregate"]
+        Aggregates --> EventStoreService["Event Store Service (es-core)"]
+        CmdSub["Event Subscription (polling)"] --> Emitter["KafkaEventEmitter"]
     end
 
-    subgraph QRY["🔍 booking-query-handler\n(Read Side - Port 8081)"]
+    subgraph QRY["booking-query-handler (Port 7080)"]
         direction TB
-        RestQuery["REST Controllers"] --> QueryService["Query Service"]
-        QueryService --> MongoDB[("MongoDB Reactive\n(Projections)")]
-        ProjectionHandler["Projection Handler\n(Polls Events)"] --> MongoDB
+        RestQuery["REST / SSE Controllers"] --> QueryService["BookingProjectionService"]
+        QuerySub["Event Subscription (polling)"] --> Projection["Projection Handler"]
+        Projection --> MongoDB
+        QueryService --> MongoDB[("MongoDB\nbooking, dead_letter_projection")]
+        Projection -->|"publish update"| Redis[("Redis\ncache + pub/sub")]
+        Redis -->|"fan-out"| RestQuery
     end
 
-    CMD ~~~ QRY
-
-    PostgreSQL -.->|"Scheduled\nEvent Polling"| ProjectionHandler
-    KafkaPublisher -->|"External\nEvent Stream"| Kafka["🔶 Apache Kafka (Optional)\nbooking-events"]
-
-    style Client fill:#4A90D9,stroke:#2C5F8A,color:#fff
-    style CMD fill:#E8F5E9,stroke:#43A047,color:#1B5E20
-    style QRY fill:#E3F2FD,stroke:#1E88E5,color:#0D47A1
-    style RestCmd fill:#66BB6A,stroke:#2E7D32,color:#fff
-    style CommandBus fill:#81C784,stroke:#388E3C,color:#fff
-    style Aggregates fill:#A5D6A7,stroke:#43A047,color:#1B5E20
-    style EventStoreService fill:#81C784,stroke:#388E3C,color:#fff
-    style PostgreSQL fill:#FF8F00,stroke:#E65100,color:#fff
-    style KafkaPublisher fill:#C8E6C9,stroke:#66BB6A,color:#1B5E20
-    style RestQuery fill:#42A5F5,stroke:#1565C0,color:#fff
-    style QueryService fill:#64B5F6,stroke:#1976D2,color:#fff
-    style MongoDB fill:#4DB6AC,stroke:#00695C,color:#fff
-    style ProjectionHandler fill:#90CAF9,stroke:#1E88E5,color:#0D47A1
-    style Kafka fill:#FFB74D,stroke:#E65100,color:#fff
-
+    EventStoreService --> PostgreSQL[("PostgreSQL\nEvent Store")]
+    PostgreSQL -.->|"poll"| CmdSub
+    PostgreSQL -.->|"poll"| QuerySub
+    Emitter -->|"CloudEvents"| Kafka["Apache Kafka\nevent-booking-01"]
 ```
 
-### Projection Synchronization Strategies
+### Projection Synchronization
 
-The system supports two projection update strategies controlled by configuration:
+Both services can run an event-store subscription (`eventstore.subscription.enabled`). Which service writes projections is controlled by `projections.handlers.enabled`:
 
-#### Strategy 1: Query-Handler Pulls Events (Recommended)
-```yaml
-# booking-command-handler
-projections.handlers.enabled: false
+| Property | command-handler | query-handler |
+|----------|-----------------|---------------|
+| `projections.handlers.enabled` (default, recommended) | `false` | `true` |
 
-# booking-query-handler
-projections.handlers.enabled: true
-```
+**Default flow:**
+1. Command handler validates the command and appends events to the event store
+2. Query handler's `ScheduledEventHandlerService` polls the event store (`PT6S`)
+3. `BookingEventHandler` rebuilds the aggregate (snapshot + replay) and upserts the MongoDB projection
+4. The update is published on Redis and pushed to SSE subscribers
+5. Failures are classified per aggregate: transient infrastructure errors are rethrown so the batch retries; anything else is written to `dead_letter_projection` and the subscription moves on
 
-**Flow:**
-1. Command-Handler receives commands
-2. Updates aggregates and persists events to Event Store
-3. Query-Handler's ScheduledEventHandlerService polls Event Store
-4. BookingEventHandler processes new events
-5. Rebuilds aggregates from events
-6. Updates MongoDB and PostgreSQL projections
-7. Exposes query endpoints
+The alternative (command handler writes projections, query handler only reads) is still supported by flipping both flags. See [Projection Synchronization Guide](.docs/PROJECTION_SYNCHRONIZATION_GUIDE.md).
 
-**Benefits:**
-- Pure separation of concerns
-- Query-Handler controls its own projection updates
-- No direct coupling between services
-- Easier to scale query handlers independently
+### Kafka Integration Events
 
-**Layout:**
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Command-Handler                           │
-│                  (Pure Command Side)                        │
-├─────────────────────────────────────────────────────────────┤
-│  1. Receive command                                         │
-│  2. Update aggregate                                        │
-│  3. Persist events to Event Store ✅                        │
-│  4. Done! (No projection logic)                             │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-                    ┌───────────────┐
-                    │  Event Store  │
-                    │  (PostgreSQL) │
-                    └───────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Query-Handler                             │
-│                  (Pure Query Side)                          │
-├─────────────────────────────────────────────────────────────┤
-│  1. ScheduledEventHandlerService polls Event Store          │
-│  2. BookingEventHandler processes new events                │
-│  3. Rebuilds aggregate from events                          │
-│  4. Updates MongoDB projection                              │
-│  5. Updates PostgreSQL projection                           │
-│  6. Exposes query endpoints                                 │
-└─────────────────────────────────────────────────────────────┘
-```
+Kafka is used for **external boundaries**, not for internal projection synchronization.
 
-#### Strategy 2: Command-Handler Pushes Projections
-```yaml
-# booking-command-handler
-projections.handlers.enabled: true
+- The command handler's subscription hands each event to `ApplicationEventPublisher`; `KafkaEventEmitter` listens and sends it
+- `EventTypeBindings` routes each event type to binding `event-booking-out-0` → topic `event-booking-01`, and fails loudly on unmapped types
+- CloudEvents 1.0 binary mode: `ce_specversion`, `ce_id`, `ce_type`, `ce_source`, `ce_time` headers, `content-type` as data content type, message key = aggregate id
+- The producer is synchronous and runs inside the subscription poll transaction, so a failed send rolls back the offset and the batch is retried (**at-least-once**; consumers must be idempotent)
 
-# booking-query-handler
-projections.handlers.enabled: false
-```
-
-**Flow:**
-1. Command-Handler receives commands
-2. Updates aggregates and persists events to Event Store
-3. Command-Handler's ScheduledEventHandlerService polls Event Store
-4. BookingEventHandler processes events and updates projections
-5. Query-Handler reads from pre-built projections
-
-**Benefits:**
-- Immediate projection updates
-- Simpler query-handler implementation
-- Centralized projection logic
-
-**Layout:**
-
-**Top Section: Command Handler (Expanded)**
-```
-┌─────────────────────────────────────────────┐
-│     Command-Handler                         │
-│     (Command + Projection Updates)          │
-├─────────────────────────────────────────────┤
-│  1. Receive command                         │
-│  2. Update aggregate                        │
-│  3. Persist events to Event Store ✅        │
-│  4. Return response                         │
-│  ┌───────────────────────────────────┐     │
-│  │ Background Process:               │     │
-│  │ 5. ScheduledEventHandlerService   │     │
-│  │ 6. BookingEventHandler            │     │
-│  │ 7. Updates MongoDB projection     │     │
-│  │ 8. Updates PostgreSQL projection  │     │
-│  └───────────────────────────────────┘     │
-└─────────────────────────────────────────────┘
-```
-
-**Middle Section: Projections**
-```
-         ┌───────────────────┐
-         │   MongoDB         │
-         │   (Projections)   │
-         └───────────────────┘
-```
-
-**Bottom Section: Query Handler (Simplified)**
-```
-┌─────────────────────────────────────────────┐
-│     Query-Handler                           │
-│     (Pure Query Side)                       │
-├─────────────────────────────────────────────┤
-│  1. Receives query requests                 │
-│  2. Reads from MongoDB projection           │
-│  3. Returns results                         │
-└─────────────────────────────────────────────┘
-```
-
-### Kafka Usage (Optional)
-
-Kafka is used for publishing events to **external boundaries** (other microservices, external systems), not for internal projection synchronization:
-
-```yaml
-# Optional Kafka configuration for external event publishing
-spring:
-  cloud:
-    stream:
-      bindings:
-        booking-events-out:
-          destination: booking-events
-          content-type: application/json
-```
-
-**Architecture Diagram**: [View on Excalidraw](https://excalidraw.com/)
-
-### Domain Model Hierarchy
+### Domain Model
 
 ```
 Booking Aggregate Root
-├── Aggregate ID (UUID)
-├── Aggregate Version (Long)
-├── Booking ID (UUID)
-├── Booking Reference (String)
-├── Status (BookingStatus Enum)
-│   ├── CREATED
-│   ├── PLACED
-│   ├── CONFIRMED
-│   ├── COMPLETED
-│   ├── CANCELLED
-│   └── EXPIRED
+├── Aggregate ID / Version
+├── Booking ID, Booking Reference
+├── Status: CREATED | CONFIRMED | CANCELLED | COMPLETED | EXPIRED
 ├── Paxes (List<PaxVO>)
-│   ├── Pax ID
-│   ├── First Name
-│   ├── Last Name
-│   ├── Email
-│   ├── Phone
-│   ├── Age
-│   ├── Document Type
-│   ├── Document Number
-│   └── Pax Type
-├── Lead Pax ID (UUID)
+├── Lead Pax ID
 ├── Products (List<ProductVO>)
-│   ├── Product ID
-│   ├── Product Name
-│   ├── Product Type
-│   ├── Price
-│   └── Currency
-└── Metadata (Map<String, Object>)
+│   ├── TransferVO (origin, destination, trips, vehicle, price)
+│   └── HotelVO (hotel, location, check-in/out, rooms, price)
+└── Metadata
 
-Commands
-├── CreateBookingCommand
-├── PlaceBookingCommand
-├── ConfirmBookingCommand
-├── CancelBookingCommand
-├── CompleteBookingCommand
-└── ExpireBookingCommand
-
-Events
-├── BookingCreatedEvent
-├── BookingPlacedEvent
-├── BookingConfirmedEvent
-├── BookingCancelledEvent
-├── BookingCompletedEvent
-└── BookingExpiredEvent
+Commands: Create, Confirm, Cancel, Complete, Expire
+Events:   BookingCreated, BookingConfirmed, BookingCancelled, BookingCompleted, BookingExpired
 ```
 
-**Domain Model Diagram**: [View on Excalidraw](https://excalidraw.com/)
-
-### Key Components
-
-**Command Handler (Write Side):**
-- **Controllers**: REST endpoints for command operations
-- **Command Bus**: Routes commands to appropriate handlers
-- **Command Handlers**: Execute business logic and generate events
-- **Domain Aggregates**: Encapsulate business rules and state
-- **Event Store Service**: Persists events to PostgreSQL
-- **Event Publisher**: Publishes events to Kafka
-- **Projection Handler**: Updates MongoDB projections
-
-**Query Handler (Read Side):**
-- **Controllers**: REST endpoints for query operations
-- **Query Service**: Retrieves data from MongoDB projections
-- **MongoDB Repository**: Reactive data access layer
-- **Event Consumer**: Listens to Kafka events and updates projections
+See [Booking and Product Status Lifecycle](.docs/BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION.md).
 
 ---
 
@@ -371,128 +156,106 @@ Events
 
 ### Prerequisites
 
-- **Java 21** or higher
+- **Java 25** (`.sdkmanrc`: `java=25-tem`)
 - **Maven 3.9+**
-- **Docker & Docker Compose** (for infrastructure)
-- **Git**
+- **Docker** (infrastructure and Testcontainers integration tests)
 
-### Compilation Steps
+### Build
 
-1. **Clone the repository:**
 ```bash
-git clone <repository-url>
-cd booking-service
-```
-
-2. **Compile the entire project:**
-```bash
-mvn clean install
-```
-
-3. **Compile individual modules:**
-```bash
-# Command Handler
-cd booking-command-handler
-mvn clean package
-
-# Query Handler
-cd booking-query-handler
-mvn clean package
-```
-
-4. **Run tests:**
-```bash
-# All tests
-mvn test
-
-# Specific module
-mvn test -pl booking-command-handler
-
-# With coverage
+# Full build (unit + integration tests, JaCoCo gate)
 mvn clean verify
+
+# Install all modules
+mvn clean install
+
+# Skip tests
+mvn clean install -DskipTests
+
+# Single module (with its dependencies)
+mvn -pl booking-command-handler -am verify
+
+# Skip integration tests only
+mvn clean verify -DskipIntegrationTests=true
 ```
 
-5. **Skip tests (faster build):**
-```bash
-mvn clean install -DskipTests
-```
+Integration tests (`*IT.java`) start PostgreSQL, MongoDB and Kafka with Testcontainers, so Docker must be running. The JaCoCo gate requires 10% minimum coverage per module.
 
 ---
 
 ## How to Run
 
-### Option 1: Using Maven (Development)
+### Option 1: Maven (Development)
 
-**Step 1: Start Infrastructure**
 ```bash
+# 1. Infrastructure
 cd .docker
-docker-compose up -d postgres mongo kafka redis
+docker compose up -d postgres mongo kafka redis
+
+# 2. Command handler (port 8080)
+mvn -pl booking-command-handler spring-boot:run
+
+# 3. Query handler (port 7080), in another terminal
+mvn -pl booking-query-handler spring-boot:run
 ```
 
-**Step 2: Start Command Handler**
-```bash
-cd booking-command-handler
-mvn spring-boot:run
-```
+The `local` profile is active by default. Flyway creates the `eventstore` schema on first start.
 
-**Step 3: Start Query Handler (in another terminal)**
-```bash
-cd booking-query-handler
-mvn spring-boot:run
-```
+### Option 2: Executable JARs
 
-### Option 2: Using JAR (Production-like)
-
-**Step 1: Build JARs**
 ```bash
-mvn clean package
-```
-
-**Step 2: Start Infrastructure**
-```bash
-cd .docker
-docker-compose up -d postgres mongo kafka redis
-```
-
-**Step 3: Run Command Handler**
-```bash
+mvn clean package -DskipTests
 java -jar booking-command-handler/target/booking-command-handler-exec.jar
-```
-
-**Step 4: Run Query Handler**
-```bash
 java -jar booking-query-handler/target/booking-query-handler-exec.jar
 ```
 
-### Option 3: Using Docker Compose (Full Stack)
+### Option 3: Docker Compose (Full Stack)
+
+The service images copy the pre-built `*-exec.jar`, so build first:
 
 ```bash
+mvn clean package -DskipTests
 cd .docker
-docker-compose up -d
+docker compose up -d --build
 ```
 
-This starts all infrastructure components:
-- PostgreSQL (Event Store) - Port 5432
-- MongoDB (Projections) - Port 27017
-- Mongo Express (UI) - Port 8081
-- Apache Kafka - Port 9092
-- Kafbat UI (Kafka Management) - Port 18080
-- Redis - Port 6379
-- SonarQube - Port 9000
+| Component | Port |
+|-----------|------|
+| booking-command-handler | 8080 |
+| booking-query-handler | 7080 |
+| PostgreSQL (Event Store) | 5432 |
+| MongoDB | 27017 |
+| Mongo Express | 8081 |
+| Kafka | 9092 |
+| Kafbat UI | 18080 |
+| Redis | 6379 |
+| SonarQube | 9000 |
 
-### Verify the Service
+### Main Environment Variables
 
-**Command Handler Health Check:**
+| Variable | Default | Used by |
+|----------|---------|---------|
+| `SERVER_PORT` | `8080` / `7080` | both |
+| `SPRING_PROFILES_ACTIVE` | `local` | both |
+| `POSTGRES_URL` | `jdbc:postgresql://localhost:5432/postgres` | both |
+| `MONGODB_URI` | `mongodb://root:root@127.0.0.1:27017/booking?authSource=admin` | both |
+| `KAFKA_BROKERS` | `localhost:9092` | command |
+| `REDIS_HOST` | `localhost` | query |
+| `COGNITO_ENABLED` | `false` | both |
+| `COGNITO_ISSUER_URI` | _(empty)_ | both |
+
+### Security
+
+Security is disabled by default (all requests permitted). Set `COGNITO_ENABLED=true` and `COGNITO_ISSUER_URI` to validate bearer JWTs. `/management/**`, Swagger UI and `/v3/api-docs/**` stay public.
+
+### Verify
+
 ```bash
-curl http://localhost:8080/actuator/health
+curl http://localhost:8080/management/healthcheck
+curl http://localhost:7080/management/healthcheck
 ```
 
-**Query Handler Health Check:**
-```bash
-curl http://localhost:8081/actuator/health
-```
-
-**Create a Booking (Transfer + Hotel):**
+**Create a booking (Transfer + Hotel):**
 ```bash
 curl -X POST http://localhost:8080/command-handler/api/bookings/create \
   -H "Accept-Version: application/vnd.booking-command-handler.v1" \
@@ -550,72 +313,19 @@ curl -X POST http://localhost:8080/command-handler/api/bookings/create \
   }'
 ```
 
-**Query a Booking:**
+**Query it:**
 ```bash
-curl http://localhost:8081/query-handler/api/bookings/{bookingId} \
+curl http://localhost:7080/query-handler/api/bookings/{bookingId} \
   -H "Accept-Version: application/vnd.booking-query-handler.v1"
 ```
 
----
-
-## How to Check SonarQube
-
-### 1. Start SonarQube
-
+**Follow live updates:**
 ```bash
-cd .docker
-docker-compose up -d sonarqube sonarqube-db
+curl -N http://localhost:7080/query-handler/api/bookings/stream \
+  -H "Accept-Version: application/vnd.booking-query-handler.v1"
 ```
 
-Wait for SonarQube to start (check logs):
-```bash
-docker logs -f sonarqube-local
-```
-
-### 2. Login to SonarQube
-
-Open browser: http://localhost:9000
-
-Default credentials:
-- Username: `admin`
-- Password: `admin`
-
-(You'll be prompted to change the password on first login)
-
-### 3. Generate SonarQube Token
-
-1. Go to **My Account** → **Security** → **Generate Tokens**
-2. Name: `booking-service-analysis`
-3. Type: `Project Analysis Token`
-4. Click **Generate**
-5. Copy the token (you won't see it again)
-
-### 4. Run Maven Sonar Analysis
-
-```bash
-mvn clean verify sonar:sonar \
-  -Dsonar.projectKey=booking-service \
-  -Dsonar.projectName='Booking Service' \
-  -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.token=<YOUR_TOKEN_HERE>
-```
-
-### 5. View Results
-
-Open http://localhost:9000/dashboard?id=booking-service
-
-### SonarQube Configuration
-
-Add to `pom.xml` (already configured):
-```xml
-<properties>
-    <sonar.organization>your-org</sonar.organization>
-    <sonar.host.url>http://localhost:9000</sonar.host.url>
-    <sonar.coverage.jacoco.xmlReportPaths>
-        ${project.build.directory}/site/jacoco/jacoco.xml
-    </sonar.coverage.jacoco.xmlReportPaths>
-</properties>
-```
+A Postman collection is available at [booking-service.postman_collection.json](booking-service.postman_collection.json).
 
 ---
 
@@ -624,81 +334,93 @@ Add to `pom.xml` (already configured):
 ### Command Handler (Port 8080)
 
 **Base URL:** `http://localhost:8080/command-handler/api/bookings`
+**Header:** `Accept-Version: application/vnd.booking-command-handler.v1`
 
-**Header Required:** `Accept-Version: application/vnd.booking-command-handler.v1`
+| Method | Endpoint | Description | Success |
+|--------|----------|-------------|---------|
+| POST | `/create` | Create a booking | 201 |
+| POST | `/{bookingId}/confirm` | Confirm a booking | 200 |
+| POST | `/{bookingId}/cancel` | Cancel a booking | 200 |
+| POST | `/{bookingId}/complete` | Complete a booking | 200 |
+| POST | `/{bookingId}/expire` | Expire a booking | 200 |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/create` | Create a new booking |
-| POST | `/place` | Place a booking |
-| POST | `/{bookingId}/confirm` | Confirm a booking |
-| POST | `/{bookingId}/cancel` | Cancel a booking |
-| POST | `/{bookingId}/complete` | Complete a booking |
-| POST | `/{bookingId}/expire` | Expire a booking |
+### Query Handler (Port 7080)
 
-### Query Handler (Port 8081)
-
-**Base URL:** `http://localhost:8081/query-handler/api/bookings`
-
-**Header Required:** `Accept-Version: application/vnd.booking-query-handler.v1`
+**Base URL:** `http://localhost:7080/query-handler/api`
+**Header:** `Accept-Version: application/vnd.booking-query-handler.v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/{bookingId}` | Get booking by ID |
-| GET | `/` | List all bookings (with pagination) |
-| GET | `/search` | Search bookings by criteria |
+| GET | `/bookings/{bookingId}` | Get a booking projection by ID |
+| GET | `/bookings` | List bookings (`filter`, `sort`, `offset`, `limit`) |
+| GET | `/bookings/stream` | SSE stream of booking updates (optional `booking_id`) |
+| GET | `/dead-letter-projections` | List dead-lettered projections (`status`, `aggregate_type`, paging) |
+| GET | `/dead-letter-projections/{id}` | Get a dead letter |
+| POST | `/dead-letter-projections/{id}/replay` | Re-project the aggregate from the event store |
+| POST | `/dead-letter-projections/{id}/discard` | Close without replaying |
+
+Details: [Command Handler README](booking-command-handler/README.md) · [Query Handler README](booking-query-handler/README.md)
+
+---
+
+## How to Check SonarQube
+
+```bash
+cd .docker
+docker compose up -d sonarqube sonarqube-db
+```
+
+1. Open http://localhost:9000 (default `admin` / `admin`, change on first login)
+2. **My Account → Security → Generate Tokens** (type: Project Analysis Token)
+3. Run the analysis:
+
+```bash
+mvn clean verify sonar:sonar \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=<YOUR_TOKEN_HERE>
+```
+
+The Sonar plugin, project key (`${project.artifactId}`), exclusions and JaCoCo report paths (unit and IT) are configured in the root `pom.xml`.
 
 ---
 
 ## Additional Resources
 
-### Documentation Files
+### Documentation
 
 - [Command Handler README](booking-command-handler/README.md)
-- [Contributing Guide](CONTRIBUTING.md)
 - [Query Handler README](booking-query-handler/README.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [Projection Synchronization Guide](.docs/PROJECTION_SYNCHRONIZATION_GUIDE.md)
 - [Agentic AI Integration Architecture](.docs/AGENTIC_AI_BOOKING_SERVICE.md)
-- [BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION](.docs/BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION.md)
+- [Booking and Product Status Lifecycle](.docs/BOOKING_AND_PRODUCT_STATUS_LIFECYCLE_SPECIFICATION.md)
 
 ### API Documentation
 
-- **Command Handler Swagger UI**: http://localhost:8080/swagger-ui.html
-- **Query Handler Swagger UI**: http://localhost:8081/swagger-ui.html
-- **Command Handler OpenAPI**: http://localhost:8080/v3/api-docs
-- **Query Handler OpenAPI**: http://localhost:8081/v3/api-docs
+| | Command Handler | Query Handler |
+|--|-----------------|---------------|
+| Swagger UI | http://localhost:8080/swagger-ui.html | http://localhost:7080/swagger-ui.html |
+| OpenAPI (live) | http://localhost:8080/v3/api-docs | http://localhost:7080/v3/api-docs |
+| OpenAPI (static) | [openapi.yaml](booking-command-handler/openapi/openapi.yaml) | [openapi.yaml](booking-query-handler/openapi/openapi.yaml) |
 
 ### Monitoring & Management
 
-- **Command Handler Actuator**: http://localhost:8080/actuator
-- **Query Handler Actuator**: http://localhost:8081/actuator
-- **Mongo Express**: http://localhost:8081 (MongoDB UI)
-- **Kafbat UI**: http://localhost:18080 (Kafka Management)
+- **Command Handler Actuator**: http://localhost:8080/management
+- **Query Handler Actuator**: http://localhost:7080/management
+- **Mongo Express**: http://localhost:8081
+- **Kafbat UI**: http://localhost:18080
 - **SonarQube**: http://localhost:9000
 
 ### External Links
 
-- [Spring Boot Documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/)
-- [Spring WebFlux](https://docs.spring.io/spring-framework/reference/web/webflux.html)
+- [Spring Boot Documentation](https://docs.spring.io/spring-boot/)
 - [Event Sourcing Pattern](https://martinfowler.com/eaaDev/EventSourcing.html)
 - [CQRS Pattern](https://martinfowler.com/bliki/CQRS.html)
-- [Apache Kafka](https://kafka.apache.org/documentation/)
+- [CloudEvents Kafka Binding](https://github.com/cloudevents/spec/blob/main/cloudevents/bindings/kafka-protocol-binding.md)
+- [RSQL Parser](https://github.com/jirutka/rsql-parser)
 
 ---
 
 ## License
 
-This project is licensed under the terms specified in the LICENSE file.
-
----
-
-## Contact & Support
-
-For questions, issues, or contributions, please refer to the project repository.
-
-**Project Statistics:**
-- Total Lines of Code: ~15,000+
-- Test Coverage: 141 unit tests (100% pass rate)
-- Modules: 2 microservices + 1 core library
-- API Endpoints: 12+ REST endpoints
-- Supported Operations: 6 command types, 6 event types
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.

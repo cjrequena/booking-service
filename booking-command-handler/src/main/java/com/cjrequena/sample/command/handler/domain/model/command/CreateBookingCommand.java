@@ -60,7 +60,7 @@ public class CreateBookingCommand extends Command {
   Map<String, Object> metadata;
 
   /**
-   * Constructs a new PlaceBookingCommand.
+   * Constructs a new CreateBookingCommand.
    *
    * @param paxes     the list of passengers
    * @param leadPaxId the ID of the lead passenger

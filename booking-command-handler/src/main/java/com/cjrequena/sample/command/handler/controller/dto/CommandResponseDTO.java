@@ -8,20 +8,13 @@ import java.io.Serializable;
 import java.util.UUID;
 
 /**
- * Data Transfer Object for placing a new booking.
- * <p>
- * This DTO is used for REST API communication and will be mapped
- * to a PlaceBookingCommand for domain processing.
- * </p>
+ * Response returned by every booking command endpoint.
  * <p>
  * JSON Structure (snake_case):
  * <pre>
  * {
  *   "booking_id": "uuid",
- *   "booking_reference": "BK-2026-001",
- *   "paxes": [...],
- *   "lead_pax_id": "uuid",
- *   "products": [...]
+ *   "status": "CREATED"
  * }
  * </pre>
  * </p>

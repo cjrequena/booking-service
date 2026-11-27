@@ -6,7 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.NullValueCheckStrategy;
 
 /**
- * MapStruct mapper for converting between PlaceBookingCommandDTO and PlaceBookingCommand.
+ * MapStruct mapper for converting command DTOs into domain commands.
  * <p>
  * This mapper handles the conversion between the REST API layer (DTO)
  * and the domain layer (Command), including UUID generation if needed.
@@ -18,9 +18,7 @@ import org.mapstruct.NullValueCheckStrategy;
  * <p>
  * Usage:
  * <pre>
- * PlaceBookingCommandMapper mapper = PlaceBookingCommandMapper.INSTANCE;
- * PlaceBookingCommand command = mapper.toCommand(dto);
- * PlaceBookingCommandDTO dto = mapper.toDTO(command);
+ * CreateBookingCommand command = commandMapper.toCommand(createBookingCommandDTO);
  * </pre>
  * </p>
  *
@@ -40,17 +38,6 @@ public interface CommandMapper {
   // ================================================================
   // Commands  <-->  DTOs
   // ================================================================
-
-  /**
-   * PlaceBooking accepts metadata since it initializes the booking.
-   */
-  default PlaceBookingCommand toCommand(PlaceBookingCommandDTO dto) {
-    return new PlaceBookingCommand(
-      dto.paxes(),
-      dto.leadPaxId(),
-      dto.products()
-    );
-  }
 
   /**
    * CreateBooking accepts metadata since it initializes the booking.

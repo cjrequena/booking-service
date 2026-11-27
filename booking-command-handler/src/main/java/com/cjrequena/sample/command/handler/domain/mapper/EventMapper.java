@@ -96,7 +96,7 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingConfirmedEvent to JSON", e);
     }
     try {
       entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
@@ -146,7 +146,7 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingCancelledEvent to JSON", e);
     }
     try {
       entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
@@ -195,7 +195,7 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingCompletedEvent to JSON", e);
     }
     try {
       entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
@@ -244,7 +244,7 @@ public interface EventMapper {
     try {
       entity.setData(JsonUtil.objectToJsonString(event.getData()));
     } catch (Exception e) {
-      throw new MapperException("Failed to serialize BookingPlacedEvent to JSON", e);
+      throw new MapperException("Failed to serialize BookingExpiredEvent to JSON", e);
     }
     try {
       entity.setExtension(MetadataVO.of(event.getExtension()).toJson());
@@ -279,7 +279,7 @@ public interface EventMapper {
     try {
       return MetadataVO.of(json).toMap();
     } catch (Exception e) {
-      throw new MapperException("Failed to deserialize EventEntity data to BookingCreatedEventDataVO", e);
+      throw new MapperException("Failed to deserialize EventEntity extension", e);
     }
   }
 
