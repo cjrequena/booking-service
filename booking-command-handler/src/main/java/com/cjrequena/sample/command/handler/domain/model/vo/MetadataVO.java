@@ -4,13 +4,13 @@ import com.cjrequena.sample.command.handler.shared.common.util.JsonUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -88,7 +88,7 @@ public class MetadataVO implements Serializable {
     try {
       JsonNode node = getObjectMapper().readTree(json);
       return new MetadataVO(node);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new IllegalArgumentException("Invalid JSON: " + json, e);
     }
   }
@@ -125,7 +125,7 @@ public class MetadataVO implements Serializable {
       return Collections.emptySet();
     }
     Set<String> keys = new HashSet<>();
-    jsonNode.fieldNames().forEachRemaining(keys::add);
+    keys.addAll(jsonNode.propertyNames());
     return Collections.unmodifiableSet(keys);
   }
 
@@ -406,7 +406,7 @@ public class MetadataVO implements Serializable {
     ObjectNode merged = ((ObjectNode) this.jsonNode).deepCopy();
     ObjectNode otherNode = (ObjectNode) other.jsonNode;
 
-    otherNode.fields().forEachRemaining(entry -> {
+    otherNode.properties().forEach(entry -> {
       merged.set(entry.getKey(), entry.getValue());
     });
 
@@ -432,7 +432,7 @@ public class MetadataVO implements Serializable {
   public String toJson() {
     try {
       return getObjectMapper().writeValueAsString(jsonNode);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return "{}";
     }
   }
@@ -443,7 +443,7 @@ public class MetadataVO implements Serializable {
   public String toPrettyJson() {
     try {
       return getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return "{}";
     }
   }

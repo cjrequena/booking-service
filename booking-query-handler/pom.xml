@@ -32,16 +32,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.junit.vintage</groupId>
-                    <artifactId>junit-vintage-engine</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -54,15 +48,15 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -90,6 +84,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cz.jirutka.rsql</groupId>
+            <artifactId>rsql-parser</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hibernate.validator</groupId>
@@ -127,19 +125,13 @@
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${org.springdoc.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/jakarta.json/jakarta.json-api -->
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <version>${jakarta.json-api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.johnzon</groupId>
-            <artifactId>johnzon-core</artifactId>
-            <version>${johnzon-core.version}</version>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

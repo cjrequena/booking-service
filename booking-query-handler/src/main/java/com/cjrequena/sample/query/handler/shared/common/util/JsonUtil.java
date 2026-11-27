@@ -1,9 +1,8 @@
 package com.cjrequena.sample.query.handler.shared.common.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,21 +38,21 @@ public final class JsonUtil {
   /**
    * Converts an object to a JSON string.
    */
-  public static <T> String objectToJsonString(T object) throws JsonProcessingException {
+  public static <T> String objectToJsonString(T object) {
     return getObjectMapper().writeValueAsString(object);
   }
 
   /**
    * Converts a JSON string back to an object.
    */
-  public static <T> T jsonStringToObject(String jsonString, Class<T> clazz) throws JsonProcessingException {
+  public static <T> T jsonStringToObject(String jsonString, Class<T> clazz) {
     return getObjectMapper().readValue(jsonString, clazz);
   }
 
   /**
    * Converts an object to a Base64-encoded JSON string.
    */
-  public static <T> String objectToJsonBase64(T object) throws JsonProcessingException {
+  public static <T> String objectToJsonBase64(T object) {
     String jsonString = getObjectMapper().writeValueAsString(object);
     return Base64.getEncoder().encodeToString(jsonString.getBytes(StandardCharsets.UTF_8));
   }
@@ -61,7 +60,7 @@ public final class JsonUtil {
   /**
    * Decodes a Base64 JSON string back to an object.
    */
-  public static <T> T jsonBase64ToObject(String base64, Class<T> clazz) throws JsonProcessingException {
+  public static <T> T jsonBase64ToObject(String base64, Class<T> clazz) {
     byte[] decodedBytes = Base64.getDecoder().decode(base64);
     String jsonString = new String(decodedBytes, StandardCharsets.UTF_8);
     return getObjectMapper().readValue(jsonString, clazz);
@@ -93,7 +92,7 @@ public final class JsonUtil {
   /**
    * Converts a JsonNode back into an object of the specified type.
    */
-  public static <T> T jsonNodeToObject(JsonNode node, Class<T> clazz) throws JsonProcessingException {
+  public static <T> T jsonNodeToObject(JsonNode node, Class<T> clazz) {
     return getObjectMapper().treeToValue(node, clazz);
   }
 

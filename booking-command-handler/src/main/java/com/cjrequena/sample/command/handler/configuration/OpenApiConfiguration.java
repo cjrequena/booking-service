@@ -1,8 +1,9 @@
 package com.cjrequena.sample.command.handler.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -12,15 +13,11 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@RequiredArgsConstructor
 public class OpenApiConfiguration {
-
-  private final ObjectMapper objectMapper;
 
   private static final String SECURITY_SCHEME_NAME = "bearerAuth";
 
@@ -56,6 +53,8 @@ public class OpenApiConfiguration {
   public void init() {
     ModelConverters
       .getInstance()
-      .addConverter(new ModelResolver(objectMapper));
+      // swagger-core still resolves models with Jackson 2, so it cannot take the service's Jackson 3
+      // mapper; it only needs that mapper's snake_case naming to document the wire format.
+      .addConverter(new ModelResolver(Json.mapper().copy().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)));
   }
 }

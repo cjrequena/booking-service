@@ -6,9 +6,13 @@ import com.cjrequena.sample.query.handler.domain.mapper.PaxMapper;
 import com.cjrequena.sample.query.handler.domain.mapper.ProductMapper;
 import com.cjrequena.sample.query.handler.domain.model.PageResult;
 import com.cjrequena.sample.query.handler.domain.model.aggregate.Booking;
+import com.cjrequena.sample.query.handler.domain.model.enums.BookingStatus;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.repository.BookingProjectionRepository;
+import com.cjrequena.sample.query.handler.service.sse.BookingUpdateMessage;
 import com.cjrequena.sample.query.handler.service.base.BaseService;
+import com.cjrequena.sample.query.handler.service.sse.BookingUpdatePublisher;
+import com.cjrequena.sample.query.handler.shared.common.rsql.FilterField;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -17,11 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -32,12 +36,11 @@ import java.util.UUID;
  * <ul>
  *   <li>retrieveById: Cached by booking ID with 10-minute TTL</li>
  *   <li>retrieve: Not cached (list operations typically shouldn't be cached)</li>
- *   <li>save: Evicts cache before save to ensure consistency with reactive types</li>
+ *   <li>save: Evicts cache before save to ensure consistency</li>
  * </ul>
  * </p>
  * <p>
- * Note: @Transactional is not used as MongoDB reactive operations don't require
- * traditional transaction management. MongoDB provides atomic operations at the
+ * Note: @Transactional is not used: MongoDB provides atomic operations at the
  * document level by default.
  * </p>
  *
@@ -48,37 +51,36 @@ import java.util.UUID;
 @AllArgsConstructor(onConstructor = @__(@Autowired))
 public class BookingProjectionService extends BaseService<BookingEntity> {
 
+  private static final Map<String, FilterField> FILTERABLE = Map.of(
+    "booking_id", FilterField.of("bookingId", UUID::fromString),
+    "booking_reference", FilterField.text("bookingReference"),
+    "status", FilterField.of("status", BookingStatus::valueOf),
+    "lead_pax_id", FilterField.of("leadPaxId", UUID::fromString)
+  );
+
+  private static final Map<String, String> SORTABLE = Map.of(
+    "booking_reference", "bookingReference",
+    "status", "status"
+  );
+
   private final BookingProjectionRepository bookingProjectionRepository;
   private final PaxMapper paxMapper;
   private final ProductMapper productMapper;
-  private final ReactiveMongoTemplate mongoTemplate;
-
-  @Override
-  protected ReactiveMongoTemplate getMongoTemplate() {
-    return this.mongoTemplate;
-  }
-
-  @Override
-  protected Class<BookingEntity> getEntityClass() {
-    return BookingEntity.class;
-  }
+  private final BookingUpdatePublisher bookingUpdatePublisher;
+  private final MongoTemplate mongoTemplate;
 
   /**
    * Saves a booking aggregate to the projection database and updates cache.
    * <p>
    * This method:
    * 1. Maps the domain aggregate to a persistence entity
-   * 2. Saves to MongoDB (blocking operation)
+   * 2. Saves to MongoDB
    * 3. Manually evicts and updates cache
    * </p>
    * <p>
    * Cache Strategy:
    * - Evicts existing cache entry before save to prevent stale data
    * - Cache will be repopulated on next retrieveById call
-   * </p>
-   * <p>
-   * Note: This method blocks to ensure the save completes before returning.
-   * This is necessary when called from non-reactive contexts (e.g., event handlers).
    * </p>
    *
    * @param aggregate the booking aggregate to save
@@ -110,16 +112,10 @@ public class BookingProjectionService extends BaseService<BookingEntity> {
     evictBookingCache(aggregate.getBookingId());
 
     try {
-      // Block and wait for the save to complete
-      BookingEntity savedEntity = bookingProjectionRepository
-        .save(booking)
-        .block();
-
-      if (savedEntity == null) {
-        throw new BookingProjectionException("Failed to save Booking to MongoDB ProjectionDB: save returned null");
-      }
+      BookingEntity savedEntity = bookingProjectionRepository.save(booking);
 
       log.info("Booking saved successfully to MongoDB ProjectionDB: bookingId={}", savedEntity.getBookingId());
+      bookingUpdatePublisher.publish(new BookingUpdateMessage(savedEntity.getBookingId().toString(), String.valueOf(savedEntity.getStatus())));
       return savedEntity;
 
     } catch (Exception ex) {
@@ -137,60 +133,6 @@ public class BookingProjectionService extends BaseService<BookingEntity> {
   }
 
   /**
-   * Saves a booking aggregate to the projection database reactively.
-   * <p>
-   * Use this method when working in a reactive context where you can properly
-   * subscribe to the returned Mono.
-   * </p>
-   *
-   * @param aggregate the booking aggregate to save
-   * @return Mono containing the saved booking entity
-   */
-  @CachePut(value = "bookings", key = "#aggregate.bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
-  public Mono<BookingEntity> saveReactive(@Valid @NotNull Booking aggregate) {
-
-    log.info("Saving Booking Aggregate to MongoDB ProjectionDB (reactive): bookingId={}", aggregate.getBookingId());
-
-    // Validate aggregate has required data
-    if (aggregate.getBookingId() == null) {
-      return Mono.error(new BookingProjectionException("Booking aggregate must have a bookingId"));
-    }
-
-    // Build entity from aggregate
-    BookingEntity booking = BookingEntity.builder()
-      .bookingId(aggregate.getBookingId())
-      .bookingReference(aggregate.getBookingReference())
-      .status(aggregate.getStatus())
-      .paxes(paxMapper.toPaxList(aggregate.getPaxes()))
-      .leadPaxId(aggregate.getLeadPaxId())
-      .products(productMapper.toProductList(aggregate.getProducts()))
-      .metadata(aggregate.getMetadata())
-      .build();
-
-    // Evict cache before save to ensure consistency
-    evictBookingCache(aggregate.getBookingId());
-
-    return bookingProjectionRepository
-      .save(booking)
-      .doOnSuccess(saved ->
-        log.info("Booking saved successfully to MongoDB ProjectionDB: bookingId={}", saved.getBookingId())
-      )
-      .doOnError(ex ->
-        log.error("Failed to save Booking to MongoDB ProjectionDB: bookingId={}, error={}", 
-          aggregate.getBookingId(), ex.getMessage(), ex)
-      )
-      .onErrorMap(ex -> {
-        if (ex instanceof BookingProjectionException) {
-          return ex;
-        }
-        return new BookingProjectionException(
-          "Failed to save Booking to MongoDB ProjectionDB: " + ex.getMessage(),
-          ex
-        );
-      });
-  }
-
-  /**
    * Retrieves a booking by ID with caching.
    * <p>
    * Cache key: bookingId
@@ -199,54 +141,44 @@ public class BookingProjectionService extends BaseService<BookingEntity> {
    * </p>
    *
    * @param bookingId the booking ID to retrieve
-   * @return Mono containing the booking entity
+   * @return the booking entity
    * @throws BookingNotFoundException if booking not found
    */
   @Cacheable(value = "bookings", key = "#bookingId", cacheNames = "bookings", cacheManager = "redisCacheManager")
-  public Mono<BookingEntity> retrieveById(UUID bookingId) {
+  public BookingEntity retrieveById(UUID bookingId) {
     log.debug("Retrieving booking from database (cache miss): {}", bookingId);
     return bookingProjectionRepository
       .findById(bookingId)
-      .switchIfEmpty(Mono.error(new BookingNotFoundException("BookingOrder not found by bookingId: " + bookingId)));
-  }
-
-  /**
-   * Retrieves all bookings.
-   * <p>
-   * Note: This method is not cached as list operations can be expensive to cache
-   * and may return stale data. Consider implementing pagination and caching
-   * individual pages if needed.
-   * </p>
-   *
-   * @return Flux of all booking entities
-   */
-  public Flux<BookingEntity> retrieve() {
-    log.debug("Retrieving all bookings from database");
-    return this.bookingProjectionRepository.findAll();
+      .orElseThrow(() -> new BookingNotFoundException("BookingOrder not found by bookingId: " + bookingId));
   }
 
   /**
    * Retrieves bookings with optional filtering and sorting (no pagination).
+   * <p>
+   * Not cached: list results go stale as soon as any booking changes.
+   * </p>
    *
-   * @param filter optional filter expression (see {@link BaseService})
-   * @param sort   optional sort expression, e.g. {@code status,asc}
-   * @return Flux of matching booking entities
+   * @param filter optional RSQL filter over {@code booking_id, booking_reference, status, lead_pax_id} (see {@link BaseService})
+   * @param sort   optional sort expression, e.g. {@code status,asc;booking_reference,desc}
+   * @return matching booking entities
+   * @throws IllegalArgumentException on an invalid filter or sort
    */
-  public Flux<BookingEntity> retrieve(String filter, String sort) {
+  public List<BookingEntity> retrieve(String filter, String sort) {
     log.debug("Retrieving bookings with filter: {}, sort: {}", filter, sort);
-    return findAllWithFiltersAndSort(filter, null, null, sort);
+    return findAllWithFiltersAndSort(filter, sort);
   }
 
   /**
    * Retrieves a page of bookings with optional filtering and sorting.
    *
-   * @param filter optional filter expression (see {@link BaseService})
+   * @param filter optional RSQL filter (see {@link BaseService})
    * @param offset zero-based pagination offset
-   * @param limit  maximum number of results per page
+   * @param limit  maximum number of results per page, 1..{@value BaseService#MAX_LIMIT}
    * @param sort   optional sort expression, e.g. {@code status,asc}
-   * @return Mono of a {@link PageResult} with content and pagination metadata
+   * @return the page with content and pagination metadata
+   * @throws IllegalArgumentException on an invalid filter, sort or paging parameter
    */
-  public Mono<PageResult<BookingEntity>> retrievePage(String filter, Integer offset, Integer limit, String sort) {
+  public PageResult<BookingEntity> retrievePage(String filter, int offset, int limit, String sort) {
     log.debug("Retrieving bookings page with filter: {}, offset: {}, limit: {}, sort: {}", filter, offset, limit, sort);
     return findPageWithFiltersAndSort(filter, offset, limit, sort);
   }
@@ -277,4 +209,23 @@ public class BookingProjectionService extends BaseService<BookingEntity> {
     log.debug("Evicting all bookings from cache");
   }
 
+  @Override
+  protected MongoTemplate getMongoTemplate() {
+    return mongoTemplate;
+  }
+
+  @Override
+  protected Class<BookingEntity> getEntityClass() {
+    return BookingEntity.class;
+  }
+
+  @Override
+  protected Map<String, FilterField> getFilterableFields() {
+    return FILTERABLE;
+  }
+
+  @Override
+  protected Map<String, String> getSortableFields() {
+    return SORTABLE;
+  }
 }

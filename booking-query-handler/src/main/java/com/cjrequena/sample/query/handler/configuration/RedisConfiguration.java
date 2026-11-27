@@ -1,6 +1,6 @@
 package com.cjrequena.sample.query.handler.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.SocketOptions;
@@ -27,7 +27,7 @@ import org.springframework.data.redis.connection.lettuce.LettucePoolingClientCon
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.util.StringUtils;
@@ -393,7 +393,7 @@ public class RedisConfiguration {
 
     // Configure serializers
     RedisSerializer<String> stringSerializer = new StringRedisSerializer();
-    RedisSerializer<Object> jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+    RedisSerializer<Object> jsonSerializer = new GenericJacksonJsonRedisSerializer(objectMapper);
 
     // Key serializers - always use String
     template.setKeySerializer(stringSerializer);

@@ -9,13 +9,15 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+// Intentionally NOT @Transactional: this bus only dispatches. The event store owns its own
+// transactions (EventStoreService), so a connection is held only for the persist, not for the
+// whole dispatch. Inline projection handlers write to MongoDB, which was never part of that
+// JPA transaction anyway.
 @Log4j2
 @Service
-@Transactional
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CommandBusService {
 

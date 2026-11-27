@@ -7,21 +7,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoders;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Reactive HTTP security for the query handler (runs on {@code spring-boot-starter-webflux}).
+ * Servlet HTTP security for the command handler (runs on {@code spring-boot-starter-web}).
  *
- * <p>Reactive counterpart of the standalone query handler's security stack. Two mutually-exclusive,
- * profile-gated {@link SecurityWebFilterChain} beans keep exactly one {@code anyExchange} chain active:</p>
+ * <p>Adapted from the standalone command handler's security stack. Two mutually-exclusive,
+ * profile-gated {@link SecurityFilterChain} beans keep exactly one {@code anyRequest} chain active:</p>
  * <ul>
  *   <li>{@code local} / {@code integrationTest} — permits everything, preserving the service's
  *       pre-security (unauthenticated) behaviour.</li>
- *   <li>every other profile — authenticates all exchanges except a public allowlist. When
+ *   <li>every other profile — authenticates all requests except a public allowlist. When
  *       {@code security.cognito.enabled=true} with an issuer, bearer JWTs are validated via JWKS.</li>
  * </ul>
  *
@@ -29,7 +31,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
  */
 @Slf4j
 @Configuration
-@EnableWebFluxSecurity
+@EnableWebSecurity
 @EnableConfigurationProperties(CognitoConfigurationProperties.class)
 public class SecurityConfiguration {
 
@@ -44,39 +46,41 @@ public class SecurityConfiguration {
 
   @Profile({"local", "integrationTest"})
   @Bean
-  public SecurityWebFilterChain permissiveSecurityWebFilterChain(ServerHttpSecurity http) {
-    log.info("Security: permissive filter chain (local/integrationTest) — all exchanges permitted");
-    return http
-      .csrf(ServerHttpSecurity.CsrfSpec::disable)
-      .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-      .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-      .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
-      .build();
+  public SecurityFilterChain permissiveSecurityFilterChain(HttpSecurity http) throws Exception {
+    log.info("Security: permissive filter chain (local/integrationTest) — all requests permitted");
+    http
+      .csrf(AbstractHttpConfigurer::disable)
+      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .formLogin(AbstractHttpConfigurer::disable)
+      .httpBasic(AbstractHttpConfigurer::disable)
+      .authorizeHttpRequests(registry -> registry.anyRequest().permitAll());
+    return http.build();
   }
 
   @Profile("!local & !integrationTest")
   @Bean
-  public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, CognitoConfigurationProperties cognito) {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http, CognitoConfigurationProperties cognito) throws Exception {
     http
-      .csrf(ServerHttpSecurity.CsrfSpec::disable)
-      .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-      .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-      .authorizeExchange(exchanges -> exchanges
-        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .pathMatchers(PUBLIC_PATHS).permitAll()
-        .anyExchange().authenticated());
+      .csrf(AbstractHttpConfigurer::disable)
+      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .formLogin(AbstractHttpConfigurer::disable)
+      .httpBasic(AbstractHttpConfigurer::disable)
+      .authorizeHttpRequests(registry -> registry
+        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers(PUBLIC_PATHS).permitAll()
+        .anyRequest().authenticated());
 
     if (cognito.enabled() && cognito.issuerUri() != null && !cognito.issuerUri().isBlank()) {
       log.info("Security: Cognito JWT resource server enabled, issuer={}", cognito.issuerUri());
-      http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtDecoder(reactiveJwtDecoder(cognito))));
+      http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder(cognito))));
     } else {
-      log.warn("Security: Cognito disabled — non-public exchanges will be rejected. "
+      log.warn("Security: Cognito disabled — non-public requests will be rejected. "
         + "Set security.cognito.enabled=true and security.cognito.issuer-uri to enable JWT authentication.");
     }
     return http.build();
   }
 
-  private ReactiveJwtDecoder reactiveJwtDecoder(CognitoConfigurationProperties cognito) {
-    return ReactiveJwtDecoders.fromIssuerLocation(cognito.issuerUri());
+  private JwtDecoder jwtDecoder(CognitoConfigurationProperties cognito) {
+    return JwtDecoders.fromIssuerLocation(cognito.issuerUri());
   }
 }

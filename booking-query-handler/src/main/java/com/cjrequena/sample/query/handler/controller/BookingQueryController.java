@@ -18,9 +18,13 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -74,26 +78,24 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings/{bookingId}", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<BookingEntity>> retrieveById(@PathVariable("bookingId") UUID bookingId) {
+  public ResponseEntity<BookingEntity> retrieveById(@PathVariable("bookingId") UUID bookingId) throws NotFoundException {
     log.debug("Retrieving booking by ID: {}", bookingId);
-    
-    return bookingProjectionService
-      .retrieveById(bookingId)
-      .map(booking -> ResponseEntity
+    try {
+      BookingEntity booking = bookingProjectionService.retrieveById(bookingId);
+      return ResponseEntity
         .ok()
         .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePrivate())
-        .body(booking))
-      .onErrorMap(BookingNotFoundException.class, ex -> {
-        log.warn("Booking not found: {}", bookingId);
-        return new NotFoundException(ex.getMessage());
-      })
-      .doOnError(ex -> log.error("Error retrieving booking {}: {}", bookingId, ex.getMessage()));
+        .body(booking);
+    } catch (BookingNotFoundException ex) {
+      log.warn("Booking not found: {}", bookingId);
+      throw new NotFoundException(ex.getMessage());
+    }
   }
 
 
   @Operation(
-    summary = "Retrieve all bookings",
-    description = "Retrieves a list of all booking projections. Consider implementing pagination for production use with large datasets.",
+    summary = "Retrieve bookings",
+    description = "Retrieves booking projections, optionally filtered (RSQL) and sorted. When offset and limit are both supplied the response is a page envelope (content, total_elements, total_pages, page, size); otherwise it is the full collection as an array.",
     parameters = {
       @Parameter(
         name = "accept-version", 
@@ -119,36 +121,32 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<Object>> retrieve(
+  public ResponseEntity<Object> retrieve(
+    @Parameter(description = "RSQL filter over booking_id, booking_reference, status, lead_pax_id. "
+      + "== with * is a case-insensitive wildcard match.",
+      example = "status==CONFIRMED;booking_reference==BK*")
     @RequestParam(value = "filter", required = false) String filter,
+    @Parameter(description = "Zero-based pagination offset. The response is paginated when offset and limit are both given.", example = "0")
     @RequestParam(value = "offset", required = false) Integer offset,
+    @Parameter(description = "Maximum number of results per page, 1 to 200", example = "10")
     @RequestParam(value = "limit", required = false) Integer limit,
+    @Parameter(description = "Sort by booking_reference and/or status", example = "status,asc;booking_reference,desc")
     @RequestParam(value = "sort", required = false) String sort
-  ) {
-    log.debug("Retrieving bookings - filter: {}, offset: {}, limit: {}, sort: {}", filter, offset, limit, sort);
-
-    // Paginated response when both offset and limit are supplied.
-    if (offset != null && limit != null) {
-      return bookingProjectionService
-        .retrievePage(filter, offset, limit, sort)
-        .map(page -> ResponseEntity
-          .ok()
-          .cacheControl(CacheControl.noCache())
-          .body((Object) page))
-        .onErrorMap(IllegalArgumentException.class, ex -> new BadRequestException(ex.getMessage()))
-        .doOnError(ex -> log.error("Error retrieving bookings page: {}", ex.getMessage()));
-    }
-
-    // Full (optionally filtered/sorted) collection — preserves the original list behaviour.
-    return bookingProjectionService
-      .retrieve(filter, sort)
-      .collectList()
-      .map(bookings -> ResponseEntity
+  ) throws BadRequestException {
+    log.debug("Retrieving bookings [filter={}, offset={}, limit={}, sort={}]", filter, offset, limit, sort);
+    try {
+      // Paginated response when both offset and limit are supplied; otherwise the full
+      // (optionally filtered/sorted) collection, preserving the original list behaviour.
+      Object body = (offset != null && limit != null)
+        ? bookingProjectionService.retrievePage(filter, offset, limit, sort)
+        : bookingProjectionService.retrieve(filter, sort);
+      return ResponseEntity
         .ok()
         .cacheControl(CacheControl.noCache())
-        .body((Object) bookings))
-      .onErrorMap(IllegalArgumentException.class, ex -> new BadRequestException(ex.getMessage()))
-      .doOnError(ex -> log.error("Error retrieving bookings: {}", ex.getMessage()));
+        .body(body);
+    } catch (IllegalArgumentException ex) {
+      throw new BadRequestException(ex.getMessage());
+    }
   }
 
 }

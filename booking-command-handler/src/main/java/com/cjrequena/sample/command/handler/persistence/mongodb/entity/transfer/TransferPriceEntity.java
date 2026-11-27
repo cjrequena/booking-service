@@ -4,8 +4,8 @@ import com.cjrequena.sample.command.handler.domain.model.enums.TransferServiceTy
 import com.cjrequena.sample.command.handler.persistence.mongodb.entity.PaxPriceEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

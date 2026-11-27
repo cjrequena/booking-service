@@ -51,16 +51,17 @@ spring.jpa.properties.hibernate.default_schema: eventstore
 # ----------------------------------------
 # MongoDB :: Projection
 # ----------------------------------------
-spring.data.mongodb:
+# Boot 4 moved the connection settings from spring.data.mongodb.* to spring.mongodb.*
+spring.mongodb:
   host: ${MONGODB_HOST:localhost}
   port: 27017
   database: booking
   username: root
   password: root
   authentication-database: admin
-  auto-index-creation: true
   uri: ${MONGODB_URI:mongodb://root:root@127.0.0.1:27017/booking?authSource=admin}
   # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+spring.data.mongodb.auto-index-creation: true
 
 # ----------------------------------------
 # Projections
@@ -90,14 +91,14 @@ eventstore:
 spring.flyway:
   enabled: true
   baseline-on-migrate: true
-  locations: classpath:/db/migration
+  locations: classpath:/db/eventstore-migration
 
 #------------------------------
 # SPRING CLOUD STREAM
 #------------------------------
 # https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/
 spring.cloud.stream:
-  defaultBinder: my-kafka-binder-01
+  default-binder: my-kafka-binder-01
   default:
     content-type: application/json
   bindings:
@@ -106,23 +107,43 @@ spring.cloud.stream:
       destination: event-booking-01
       content-type: application/json
       producer:
-        headerMode: headers
-        useNativeEncoding: true
+        header-mode: headers
+        use-native-encoding: true
   binders:
     my-kafka-binder-01:
       type: kafka
       environment:
         spring.cloud.stream.kafka.binder:
           brokers: "${KAFKA_BROKERS:localhost:9092}"
+          configuration:
+            # Bound producer blocking so an unreachable broker cannot hold
+            # event publishing for the default 60s max.block.ms
+            max.block.ms: 5000
+            request.timeout.ms: 5000
+            delivery.timeout.ms: 10000
+          # CloudEvents-clean wire headers (see KafkaHeaderMapperConfiguration)
+          header-mapper-bean-name: kafkaBinderHeaderMapper
           headers:
-            - x-test-header
+            - ce_specversion
+            - ce_id
+            - ce_type
+            - ce_source
+            - ce_time
+            - content-type
+            - correlationid
+            - b3
+            - traceparent
+            - tracestate
   kafka:
     bindings:
       event-booking-out-0:
         producer:
+          # Block until the broker acks, so a failed send rolls back the event subscription
+          # poll and the batch is retried (at-least-once, see KafkaEventEmitter).
+          sync: true
           configuration:
             key.serializer: org.apache.kafka.common.serialization.StringSerializer
-            value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
+            value.serializer: com.cjrequena.sample.command.handler.messaging.kafka.KafkaJsonSerializer
             spring.json.add.type.headers: false
 
 spring.cloud.sleuth:
