@@ -55,7 +55,7 @@ public abstract class Event {
   public abstract Object getData();
 
   public AbstractEventEntity mapToEventEntity() {
-    log.info("Mapping to event entity {}", this);
+    log.debug("Mapping event to entity [eventType={}, aggregateId={}]", this.eventType, this.aggregateId);
     return invoke();
   }
 

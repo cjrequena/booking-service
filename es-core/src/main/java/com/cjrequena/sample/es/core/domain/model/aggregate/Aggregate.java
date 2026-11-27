@@ -1,10 +1,9 @@
 package com.cjrequena.sample.es.core.domain.model.aggregate;
 
-
-import com.cjrequena.sample.es.core.domain.model.command.Command;
-import com.cjrequena.sample.es.core.domain.model.event.Event;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.cjrequena.sample.es.core.domain.model.command.Command;
+import com.cjrequena.sample.es.core.domain.model.event.Event;
 import jakarta.annotation.Nonnull;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;

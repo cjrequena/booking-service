@@ -1,6 +1,7 @@
 package com.cjrequena.sample.es.core.service;
 
-
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.cjrequena.sample.es.core.configuration.EventStoreConfigurationProperties;
 import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyException;
 import com.cjrequena.sample.es.core.domain.model.aggregate.Aggregate;
@@ -13,8 +14,6 @@ import com.cjrequena.sample.es.core.persistence.repository.AggregateRepository;
 import com.cjrequena.sample.es.core.persistence.repository.AggregateSnapshotRepository;
 import com.cjrequena.sample.es.core.persistence.repository.EventRepository;
 import com.cjrequena.sample.es.core.persistence.repository.EventSubscriptionRepository;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,7 +75,7 @@ public class EventStoreService {
    * @throws OptimisticConcurrencyException if the aggregate version has been modified by another transaction
    * @throws JacksonException if snapshot serialization fails
    */
-  public void saveAggregate(@NotNull Aggregate aggregate) throws OptimisticConcurrencyException, JacksonException {
+  public void saveAggregate(@NotNull Aggregate aggregate) throws OptimisticConcurrencyException {
     String aggregateType = aggregate.getAggregateType();
     UUID aggregateId = aggregate.getAggregateId();
 
@@ -100,13 +100,14 @@ public class EventStoreService {
       throw new OptimisticConcurrencyException(errorMessage);
     }
 
-    // Append new events
+    // Append new events in a single batch insert rather than one round-trip per event.
     List<Event> unconfirmedEventsPool = aggregate.getUnconfirmedEventsPool();
+    List<AbstractEventEntity> eventEntities = new ArrayList<>(unconfirmedEventsPool.size());
     for (Event event : unconfirmedEventsPool) {
-      log.info("Appending new {} event: {}", aggregateType, event);
-      AbstractEventEntity eventEntity = event.mapToEventEntity();
-      eventRepository.save(eventEntity);
+      log.debug("Appending {} event [eventId={}, aggregateId={}, version={}]", aggregateType, event.getEventId(), event.getAggregateId(), event.getAggregateVersion());
+      eventEntities.add(event.mapToEventEntity());
     }
+    eventRepository.saveAll(eventEntities);
 
     // Create snapshot if configured and interval is reached
     createSnapshotIfNeeded(aggregate);
@@ -125,7 +126,7 @@ public class EventStoreService {
    * @param aggregate the aggregate to snapshot
    * @throws JacksonException if serialization fails
    */
-  private void createSnapshotIfNeeded(Aggregate aggregate) throws JacksonException {
+  private void createSnapshotIfNeeded(Aggregate aggregate) {
     String aggregateType = aggregate.getAggregateType();
     EventStoreConfigurationProperties.SnapshotProperties snapshotProperties = eventStoreConfigurationProperties.getSnapshot(aggregateType);
     
@@ -136,7 +137,7 @@ public class EventStoreService {
     boolean shouldCreateSnapshot = aggregate.getAggregateVersion() % snapshotProperties.interval() == 0;
     
     if (shouldCreateSnapshot) {
-      log.info("Creating snapshot for {} with aggregate ID '{}' at version {}", aggregateType, aggregate.getAggregateId(), aggregate.getAggregateVersion());
+      log.debug("Creating snapshot for {} with aggregate ID '{}' at version {}", aggregateType, aggregate.getAggregateId(), aggregate.getAggregateVersion());
       
       AggregateSnapshotEntity aggregateSnapshotEntity = AggregateSnapshotEntity.builder()
         .aggregateId(aggregate.getAggregateId())
