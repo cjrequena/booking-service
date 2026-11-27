@@ -78,7 +78,7 @@ spring.mongodb:
   username: root
   password: root
   authentication-database: admin
-  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
+  uri: ${MONGODB_URI:mongodb://root:root@127.0.0.1:27017/booking?authSource=admin}
   # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
 spring.data.mongodb.auto-index-creation: true
 
@@ -91,7 +91,7 @@ projections.handlers.enabled: true
 # Redis - Enhanced Configuration
 # ----------------------------------------
 spring.redis:
-  host: localhost
+  host: ${REDIS_HOST:localhost}
   port: 6379
   password: # Leave empty for no password
   ssl: false

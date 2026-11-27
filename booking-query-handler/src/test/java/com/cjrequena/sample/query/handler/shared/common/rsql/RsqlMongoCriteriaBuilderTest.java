@@ -66,6 +66,21 @@ class RsqlMongoCriteriaBuilderTest {
   }
 
   @Test
+  void equalityWithStarIsAnAnchoredCaseInsensitiveWildcard() {
+    Pattern pattern = (Pattern) build("booking_reference==BK*").get("bookingReference");
+    assertThat(pattern.flags() & Pattern.CASE_INSENSITIVE).isNotZero();
+    assertThat(pattern.matcher("bk-123").matches()).isTrue();
+    assertThat(pattern.matcher("XBK-123").matches()).isFalse();
+    // Only * is special; a dot stays literal.
+    assertThat(((Pattern) build("booking_reference==a.*").get("bookingReference")).matcher("aXz").matches()).isFalse();
+  }
+
+  @Test
+  void starIsLiteralOnNonTextFields() {
+    assertThatThrownBy(() -> build("status==CONF*")).isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void rejectsFieldsOutsideTheAllowlist() {
     assertThatThrownBy(() -> build("paxes.email==x@example.com"))
       .isInstanceOf(IllegalArgumentException.class)

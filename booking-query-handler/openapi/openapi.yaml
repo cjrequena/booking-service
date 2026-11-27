@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: Booking Query Handler API
+  description: >-
+    Query-side API for booking projections (CQRS / Event Sourcing).
+    Reads are served from the MongoDB projection store.
+  version: 1.0.0
+  contact:
+    name: Carlos Requena
+    email: cjrequena001+git@email.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:7080
+    description: Local development server
+
+tags:
+  - name: Booking Query API
+    description: Query operations for booking projections
+
+paths:
+
+  /query-handler/api/bookings/{bookingId}:
+    get:
+      tags: [Booking Query API]
+      summary: Retrieve booking by ID
+      description: Retrieves a single booking projection by its unique identifier. Results are cached.
+      parameters:
+        - $ref: '#/components/parameters/AcceptVersion'
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Successfully retrieved booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid booking ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /query-handler/api/bookings:
+    get:
+      tags: [Booking Query API]
+      summary: Retrieve bookings
+      description: >-
+        Retrieves booking projections. When `offset`/`limit` are supplied the
+        response is paginated; otherwise the full collection is streamed.
+      parameters:
+        - $ref: '#/components/parameters/AcceptVersion'
+        - name: filter
+          in: query
+          required: false
+          description: Optional field filter expression.
+          schema:
+            type: string
+        - name: offset
+          in: query
+          required: false
+          description: Zero-based pagination offset.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of results per page.
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+        - name: sort
+          in: query
+          required: false
+          description: Sort expression, e.g. status,asc.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved bookings
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+                  - $ref: '#/components/schemas/PageResponse'
+        '400':
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+
+  parameters:
+    AcceptVersion:
+      name: accept-version
+      in: header
+      required: true
+      schema:
+        type: string
+        enum:
+          - application/vnd.booking-query-handler.v1
+      example: application/vnd.booking-query-handler.v1
+
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      description: Unique identifier of the booking
+      schema:
+        type: string
+        format: uuid
+      example: 123e4567-e89b-12d3-a456-426614174000
+
+  schemas:
+
+    Booking:
+      type: object
+      description: Booking projection document
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        booking_reference:
+          type: string
+          example: BK-2026-001
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        lead_pax_id:
+          type: string
+          format: uuid
+        aggregate_version:
+          type: integer
+          format: int64
+        paxes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        products:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    PageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+        total_elements:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error_code:
+          type: string
+        message:
+          type: string
+        validation_errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+        rejected_value: {}
+
+    BookingStatus:
+      type: string
+      enum:
+        - CREATED
+        - PROCESSING
+        - CONFIRMED
+        - PARTIALLY_CONFIRMED
+        - CANCELLED
+        - COMPLETED
+        - EXPIRED

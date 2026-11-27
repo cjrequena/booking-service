@@ -10,7 +10,7 @@ import com.cjrequena.sample.query.handler.domain.model.enums.BookingStatus;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.persistence.mongodb.repository.BookingProjectionRepository;
 import com.cjrequena.sample.query.handler.service.sse.BookingUpdateMessage;
-import com.cjrequena.sample.query.handler.service.base.MongoBaseService;
+import com.cjrequena.sample.query.handler.service.base.BaseService;
 import com.cjrequena.sample.query.handler.service.sse.BookingUpdatePublisher;
 import com.cjrequena.sample.query.handler.shared.common.rsql.FilterField;
 import jakarta.validation.Valid;
@@ -49,7 +49,7 @@ import java.util.UUID;
 @Service
 @Log4j2
 @AllArgsConstructor(onConstructor = @__(@Autowired))
-public class BookingProjectionService extends MongoBaseService<BookingEntity> {
+public class BookingProjectionService extends BaseService<BookingEntity> {
 
   private static final Map<String, FilterField> FILTERABLE = Map.of(
     "booking_id", FilterField.of("bookingId", UUID::fromString),
@@ -153,19 +153,34 @@ public class BookingProjectionService extends MongoBaseService<BookingEntity> {
   }
 
   /**
-   * Retrieves bookings matching an optional RSQL filter, sorted and optionally paged.
+   * Retrieves bookings with optional filtering and sorting (no pagination).
    * <p>
    * Not cached: list results go stale as soon as any booking changes.
    * </p>
    *
-   * @param filter RSQL expression over {@code booking_id, booking_reference, status, lead_pax_id}; null for all
-   * @param offset index of the first result; paging applies when offset or limit is given
-   * @param limit  page size, 1..{@value MongoBaseService#MAX_LIMIT}
-   * @param sort   e.g. {@code status,asc;booking_reference,desc}
+   * @param filter optional RSQL filter over {@code booking_id, booking_reference, status, lead_pax_id} (see {@link BaseService})
+   * @param sort   optional sort expression, e.g. {@code status,asc;booking_reference,desc}
+   * @return matching booking entities
+   * @throws IllegalArgumentException on an invalid filter or sort
+   */
+  public List<BookingEntity> retrieve(String filter, String sort) {
+    log.debug("Retrieving bookings with filter: {}, sort: {}", filter, sort);
+    return findAllWithFiltersAndSort(filter, sort);
+  }
+
+  /**
+   * Retrieves a page of bookings with optional filtering and sorting.
+   *
+   * @param filter optional RSQL filter (see {@link BaseService})
+   * @param offset zero-based pagination offset
+   * @param limit  maximum number of results per page, 1..{@value BaseService#MAX_LIMIT}
+   * @param sort   optional sort expression, e.g. {@code status,asc}
+   * @return the page with content and pagination metadata
    * @throws IllegalArgumentException on an invalid filter, sort or paging parameter
    */
-  public PageResult<BookingEntity> retrieve(String filter, Integer offset, Integer limit, String sort) {
-    return findPage(filter, offset, limit, sort);
+  public PageResult<BookingEntity> retrievePage(String filter, int offset, int limit, String sort) {
+    log.debug("Retrieving bookings page with filter: {}, offset: {}, limit: {}, sort: {}", filter, offset, limit, sort);
+    return findPageWithFiltersAndSort(filter, offset, limit, sort);
   }
 
   /**

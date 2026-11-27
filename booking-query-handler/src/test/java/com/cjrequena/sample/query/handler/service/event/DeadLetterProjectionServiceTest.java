@@ -106,6 +106,8 @@ class DeadLetterProjectionServiceTest {
 
     assertThat(page.content()).containsExactly(entity);
     assertThat(page.totalElements()).isEqualTo(1);
-    assertThat(page.limit()).isEqualTo(20);
+    assertThat(page.size()).isEqualTo(20);
+    assertThat(page.page()).isZero();
+    assertThat(page.totalPages()).isEqualTo(1);
   }
 }

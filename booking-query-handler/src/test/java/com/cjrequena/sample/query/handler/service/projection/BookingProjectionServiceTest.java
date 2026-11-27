@@ -82,12 +82,12 @@ class BookingProjectionServiceTest {
   }
 
   @Test
-  void retrieveAppliesFilterSortAndPaging() {
+  void retrievePageAppliesFilterSortAndPaging() {
     BookingEntity entity = BookingEntity.builder().bookingId(UUID.randomUUID()).build();
     when(mongoTemplate.count(any(Query.class), eq(BookingEntity.class))).thenReturn(42L);
     when(mongoTemplate.find(any(Query.class), eq(BookingEntity.class))).thenReturn(List.of(entity));
 
-    PageResult<BookingEntity> page = service.retrieve("status==CONFIRMED", 20, 10, "booking_reference,desc");
+    PageResult<BookingEntity> page = service.retrievePage("status==CONFIRMED", 20, 10, "booking_reference,desc");
 
     ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
     verify(mongoTemplate).find(query.capture(), eq(BookingEntity.class));
@@ -95,20 +95,30 @@ class BookingProjectionServiceTest {
     assertThat(query.getValue().getSkip()).isEqualTo(20);
     assertThat(query.getValue().getLimit()).isEqualTo(10);
     assertThat(query.getValue().getSortObject().get("bookingReference")).isEqualTo(-1);
-    assertThat(page.totalElements()).isEqualTo(42);
     assertThat(page.content()).containsExactly(entity);
+    assertThat(page.totalElements()).isEqualTo(42);
+    assertThat(page.totalPages()).isEqualTo(5);
+    assertThat(page.page()).isEqualTo(2);
+    assertThat(page.size()).isEqualTo(10);
   }
 
   @Test
-  void retrieveWithoutPagingReturnsEverything() {
-    when(mongoTemplate.find(any(Query.class), eq(BookingEntity.class))).thenReturn(List.of());
-    PageResult<BookingEntity> page = service.retrieve(null, null, null, null);
-    assertThat(page.offset()).isZero();
+  void retrieveReturnsTheWholeFilteredCollection() {
+    BookingEntity entity = BookingEntity.builder().bookingId(UUID.randomUUID()).build();
+    when(mongoTemplate.find(any(Query.class), eq(BookingEntity.class))).thenReturn(List.of(entity));
+
+    assertThat(service.retrieve("booking_reference==BK*", "status,asc")).containsExactly(entity);
+
+    ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+    verify(mongoTemplate).find(query.capture(), eq(BookingEntity.class));
+    assertThat(query.getValue().getSkip()).isZero();
+    assertThat(query.getValue().getLimit()).isZero();
   }
 
   @Test
-  void retrieveRejectsBadPaging() {
-    assertThatThrownBy(() -> service.retrieve(null, -1, 10, null)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> service.retrieve(null, 0, 500, null)).isInstanceOf(IllegalArgumentException.class);
+  void retrievePageRejectsBadPaging() {
+    assertThatThrownBy(() -> service.retrievePage(null, -1, 10, null)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.retrievePage(null, 0, 0, null)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.retrievePage(null, 0, 500, null)).isInstanceOf(IllegalArgumentException.class);
   }
 }

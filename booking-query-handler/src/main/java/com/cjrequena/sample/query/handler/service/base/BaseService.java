@@ -13,11 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MongoDB counterpart of a JPA filter/sort/page base service: subclasses declare what may be
- * filtered and sorted, and get RSQL filtering, allowlisted sorting and offset/limit paging.
+ * Filtering, sorting and offset/limit paging for query-side services backed by the MongoDB
+ * projection store: the MongoDB counterpart of the standalone query handler's JPA/RSQL
+ * {@code BaseService}. Subclasses declare what may be filtered and sorted.
  *
- * <p>Paging is opt-in. With no {@code offset}/{@code limit} the whole (filtered, sorted) result is
- * returned, so existing list endpoints keep their behaviour.</p>
+ * <p>Filters are RSQL (see {@link RsqlMongoCriteriaBuilder}), e.g.
+ * {@code status==CONFIRMED;booking_reference==BK*}. Selectors use the API's snake_case names and
+ * are mapped to entity properties, so the template's {@code QueryMapper} handles stored field
+ * names and value types.</p>
  *
  * <p>Invalid input (malformed filter, unknown field or sort property, bad paging) raises
  * {@link IllegalArgumentException}, which the global handler turns into a 400.</p>
@@ -25,7 +28,7 @@ import java.util.Map;
  * @param <E> the document type
  */
 @Log4j2
-public abstract class MongoBaseService<E> {
+public abstract class BaseService<E> {
 
   public static final int MAX_LIMIT = 200;
 
@@ -45,23 +48,32 @@ public abstract class MongoBaseService<E> {
     return Sort.unsorted();
   }
 
-  protected PageResult<E> findPage(String filter, Integer offset, Integer limit, String sort) {
-    Query query = new Query(criteriaBuilder().build(filter)).with(resolveSort(sort));
-    boolean paged = offset != null || limit != null;
-    int resolvedOffset = offset == null ? 0 : offset;
-    int resolvedLimit = limit == null ? MAX_LIMIT : limit;
-    if (paged) {
-      validatePagination(resolvedOffset, resolvedLimit);
-    }
-
-    long total = getMongoTemplate().count(Query.of(query).limit(0).skip(0), getEntityClass());
-    if (paged) {
-      query.skip(resolvedOffset).limit(resolvedLimit);
-    }
+  /** All matching entities, filtered and sorted, without paging. */
+  protected List<E> findAllWithFiltersAndSort(String filter, String sort) {
+    Query query = buildQuery(filter, sort);
     List<E> content = getMongoTemplate().find(query, getEntityClass());
+    log.debug("Found {} {} [filter={}, sort={}]", content.size(), getEntityClass().getSimpleName(), filter, sort);
+    return content;
+  }
+
+  /**
+   * One page of matching entities plus pagination metadata.
+   *
+   * @param offset index of the first result; the reported page number is {@code offset / limit}
+   * @param limit  page size, 1..{@value #MAX_LIMIT}
+   */
+  protected PageResult<E> findPageWithFiltersAndSort(String filter, int offset, int limit, String sort) {
+    validatePagination(offset, limit);
+    Query query = buildQuery(filter, sort);
+    long total = getMongoTemplate().count(Query.of(query).limit(0).skip(0), getEntityClass());
+    List<E> content = getMongoTemplate().find(query.skip(offset).limit(limit), getEntityClass());
     log.debug("Found {} of {} {} [filter={}, offset={}, limit={}, sort={}]",
       content.size(), total, getEntityClass().getSimpleName(), filter, offset, limit, sort);
-    return new PageResult<>(content, total, resolvedOffset, paged ? resolvedLimit : content.size());
+    return PageResult.of(content, total, offset / limit, limit);
+  }
+
+  private Query buildQuery(String filter, String sort) {
+    return new Query(criteriaBuilder().build(filter)).with(resolveSort(sort));
   }
 
   private Sort resolveSort(String sortExpression) {

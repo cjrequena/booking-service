@@ -59,7 +59,7 @@ spring.mongodb:
   username: root
   password: root
   authentication-database: admin
-  uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
+  uri: ${MONGODB_URI:mongodb://root:root@127.0.0.1:27017/booking?authSource=admin}
   # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
 spring.data.mongodb.auto-index-creation: true
 
@@ -81,7 +81,7 @@ eventstore:
   subscription:
     enabled: true
     name: booking-command-handler-subscription
-    #name: event-handler-${random.int(100)}
+    #name: booking-command-handler-subscriptio-${random.int(100)}
     polling-initial-delay: PT6S
     polling-interval: PT6S
 
@@ -114,7 +114,7 @@ spring.cloud.stream:
       type: kafka
       environment:
         spring.cloud.stream.kafka.binder:
-          brokers: "localhost:9092"
+          brokers: "${KAFKA_BROKERS:localhost:9092}"
           configuration:
             # Bound producer blocking so an unreachable broker cannot hold
             # event publishing for the default 60s max.block.ms

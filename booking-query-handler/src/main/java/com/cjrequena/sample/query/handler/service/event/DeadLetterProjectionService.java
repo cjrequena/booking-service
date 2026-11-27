@@ -41,7 +41,7 @@ public class DeadLetterProjectionService {
       .build();
     Page<DeadLetterProjectionEntity> page =
       deadLetterProjectionRepository.findAll(Example.of(probe), PageRequest.of(offset / limit, limit, sort));
-    return new PageResult<>(page.getContent(), page.getTotalElements(), offset, limit);
+    return PageResult.of(page.getContent(), page.getTotalElements(), offset / limit, limit);
   }
 
   public DeadLetterProjectionEntity retrieveById(UUID id) {

@@ -1,8 +1,8 @@
 package com.cjrequena.sample.query.handler.controller;
 
+import com.cjrequena.sample.query.handler.controller.exception.BadRequestException;
 import com.cjrequena.sample.query.handler.controller.exception.NotFoundException;
 import com.cjrequena.sample.query.handler.domain.exception.BookingNotFoundException;
-import com.cjrequena.sample.query.handler.domain.model.PageResult;
 import com.cjrequena.sample.query.handler.persistence.mongodb.entity.BookingEntity;
 import com.cjrequena.sample.query.handler.service.projection.BookingProjectionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,8 +40,6 @@ public class BookingQueryController {
 
   public static final String ENDPOINT = "/query-handler/api";
   public static final String ACCEPT_VERSION = "accept-version=" + VND_BOOKING_ORDER_QUERY_HANDLER_V1;
-  /** Total matches before paging; exposed to browsers by the CORS configuration. */
-  public static final String TOTAL_COUNT_HEADER = "total-count";
   
   private final BookingProjectionService bookingProjectionService;
 
@@ -97,7 +95,7 @@ public class BookingQueryController {
 
   @Operation(
     summary = "Retrieve bookings",
-    description = "Retrieves booking projections, optionally filtered (RSQL), sorted and paged. The total-count response header carries the number of matches before paging.",
+    description = "Retrieves booking projections, optionally filtered (RSQL) and sorted. When offset and limit are both supplied the response is a page envelope (content, total_elements, total_pages, page, size); otherwise it is the full collection as an array.",
     parameters = {
       @Parameter(
         name = "accept-version", 
@@ -123,24 +121,32 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings", produces = {APPLICATION_JSON_VALUE})
-  public ResponseEntity<List<BookingEntity>> retrieve(
-    @Parameter(description = "RSQL filter over booking_id, booking_reference, status, lead_pax_id",
-      example = "status==CONFIRMED;booking_reference=like=ORD")
+  public ResponseEntity<Object> retrieve(
+    @Parameter(description = "RSQL filter over booking_id, booking_reference, status, lead_pax_id. "
+      + "== with * is a case-insensitive wildcard match.",
+      example = "status==CONFIRMED;booking_reference==BK*")
     @RequestParam(value = "filter", required = false) String filter,
-    @Parameter(description = "Index of the first result (0-based). Paging applies when offset or limit is given.", example = "0")
+    @Parameter(description = "Zero-based pagination offset. The response is paginated when offset and limit are both given.", example = "0")
     @RequestParam(value = "offset", required = false) Integer offset,
-    @Parameter(description = "Page size, 1 to 200", example = "20")
+    @Parameter(description = "Maximum number of results per page, 1 to 200", example = "10")
     @RequestParam(value = "limit", required = false) Integer limit,
     @Parameter(description = "Sort by booking_reference and/or status", example = "status,asc;booking_reference,desc")
     @RequestParam(value = "sort", required = false) String sort
-  ) {
+  ) throws BadRequestException {
     log.debug("Retrieving bookings [filter={}, offset={}, limit={}, sort={}]", filter, offset, limit, sort);
-    PageResult<BookingEntity> page = bookingProjectionService.retrieve(filter, offset, limit, sort);
-    return ResponseEntity
-      .ok()
-      .cacheControl(CacheControl.noCache())
-      .header(TOTAL_COUNT_HEADER, String.valueOf(page.totalElements()))
-      .body(page.content());
+    try {
+      // Paginated response when both offset and limit are supplied; otherwise the full
+      // (optionally filtered/sorted) collection, preserving the original list behaviour.
+      Object body = (offset != null && limit != null)
+        ? bookingProjectionService.retrievePage(filter, offset, limit, sort)
+        : bookingProjectionService.retrieve(filter, sort);
+      return ResponseEntity
+        .ok()
+        .cacheControl(CacheControl.noCache())
+        .body(body);
+    } catch (IllegalArgumentException ex) {
+      throw new BadRequestException(ex.getMessage());
+    }
   }
 
 }

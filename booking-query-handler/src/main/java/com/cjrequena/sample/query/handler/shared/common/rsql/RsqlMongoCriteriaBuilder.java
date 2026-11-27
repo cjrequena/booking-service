@@ -27,7 +27,8 @@ import java.util.regex.Pattern;
  *
  * <p>Operators: {@code ==}, {@code !=}, {@code =in=}, {@code =out=}, {@code =gt=}/{@code >},
  * {@code =ge=}/{@code >=}, {@code =lt=}/{@code <}, {@code =le=}/{@code <=}, and {@code =like=}
- * (case-insensitive literal substring, text fields only).</p>
+ * (case-insensitive literal substring, text fields only). On a text field, {@code ==} with
+ * {@code *} is a case-insensitive wildcard match, e.g. {@code booking_reference==BK*}.</p>
  *
  * <p>Every rejection is an {@link IllegalArgumentException} naming the selector or operator, never
  * echoing a value, so callers map it to a 400.</p>
@@ -85,7 +86,11 @@ public class RsqlMongoCriteriaBuilder {
       Criteria criteria = Criteria.where(field.property());
 
       if (operator.equals(RSQLOperators.EQUAL)) {
-        return criteria.is(values.getFirst());
+        Object value = values.getFirst();
+        if (field.text() && value instanceof String text && text.contains("*")) {
+          return criteria.regex(wildcardToRegex(text), "i");
+        }
+        return criteria.is(value);
       }
       if (operator.equals(RSQLOperators.NOT_EQUAL)) {
         return criteria.ne(values.getFirst());
@@ -115,6 +120,21 @@ public class RsqlMongoCriteriaBuilder {
         return criteria.regex(Pattern.quote(String.valueOf(values.getFirst())), "i");
       }
       throw new IllegalArgumentException("Unsupported filter operator '%s'".formatted(operator.getSymbol()));
+    }
+
+    /** {@code BK*} becomes an anchored regex where only {@code *} is special: {@code ^\QBK\E.*$}. */
+    private String wildcardToRegex(String text) {
+      StringBuilder regex = new StringBuilder("^");
+      String[] parts = text.split("\\*", -1);
+      for (int i = 0; i < parts.length; i++) {
+        if (i > 0) {
+          regex.append(".*");
+        }
+        if (!parts[i].isEmpty()) {
+          regex.append(Pattern.quote(parts[i]));
+        }
+      }
+      return regex.append('$').toString();
     }
 
     private Object convert(FilterField field, String selector, String argument) {
