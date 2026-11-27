@@ -5,7 +5,7 @@ import com.cjrequena.sample.command.handler.domain.model.command.*;
 import com.cjrequena.sample.command.handler.domain.model.enums.BookingStatus;
 import com.cjrequena.sample.command.handler.domain.model.event.*;
 import com.cjrequena.sample.command.handler.domain.model.vo.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,7 +76,7 @@ class BookingTest extends TestBase {
 
   @Test
   @DisplayName("Should apply CreateBookingCommand and generate BookingCreatedEvent")
-  void shouldApplyCreateBookingCommand() throws JsonProcessingException {
+  void shouldApplyCreateBookingCommand() throws JacksonException {
     Booking booking = Booking.builder()
       .aggregateId(aggregateId)
       .aggregateVersion(0L)
@@ -133,7 +133,7 @@ class BookingTest extends TestBase {
 
   @Test
   @DisplayName("Should apply ConfirmBookingCommand and generate BookingConfirmedEvent")
-  void shouldApplyConfirmBookingCommand() throws JsonProcessingException {
+  void shouldApplyConfirmBookingCommand() throws JacksonException {
     Booking booking = createBookingWithCreatedStatus();
 
     ConfirmBookingCommand command = ConfirmBookingCommand.builder()
@@ -170,7 +170,7 @@ class BookingTest extends TestBase {
 
   @Test
   @DisplayName("Should apply CancelBookingCommand and generate BookingCancelledEvent")
-  void shouldApplyCancelBookingCommand() throws JsonProcessingException {
+  void shouldApplyCancelBookingCommand() throws JacksonException {
     Booking booking = createBookingWithCreatedStatus();
 
     CancelBookingCommand command = CancelBookingCommand.builder()
@@ -207,7 +207,7 @@ class BookingTest extends TestBase {
 
   @Test
   @DisplayName("Should apply CompleteBookingCommand and generate BookingCompletedEvent")
-  void shouldApplyCompleteBookingCommand() throws JsonProcessingException {
+  void shouldApplyCompleteBookingCommand() throws JacksonException {
     Booking booking = createBookingWithConfirmedStatus();
 
     CompleteBookingCommand command = CompleteBookingCommand.builder()
@@ -244,7 +244,7 @@ class BookingTest extends TestBase {
 
   @Test
   @DisplayName("Should apply ExpireBookingCommand and generate BookingExpiredEvent")
-  void shouldApplyExpireBookingCommand() throws JsonProcessingException {
+  void shouldApplyExpireBookingCommand() throws JacksonException {
     Booking booking = createBookingWithCreatedStatus();
 
     ExpireBookingCommand command = ExpireBookingCommand.builder()

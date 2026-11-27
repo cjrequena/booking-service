@@ -1,20 +1,19 @@
 package com.cjrequena.sample.command.handler.shared.common.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
 
-public class OffsetDateTimeSerializer extends JsonSerializer<OffsetDateTime> {
+public class OffsetDateTimeSerializer extends ValueSerializer<OffsetDateTime> {
 
   private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
   @Override
-  public void serialize(OffsetDateTime value, JsonGenerator generator, SerializerProvider provider) throws IOException {
+  public void serialize(OffsetDateTime value, JsonGenerator generator, SerializationContext provider) {
     generator.writeString(value.format(FORMATTER));
   }
 }

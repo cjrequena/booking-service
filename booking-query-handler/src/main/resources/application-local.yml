@@ -70,16 +70,17 @@ eventstore:
 # ----------------------------------------
 # MongoDB :: Projection
 # ----------------------------------------
-spring.data.mongodb:
+# Boot 4 moved the connection settings from spring.data.mongodb.* to spring.mongodb.*
+spring.mongodb:
   host: ${MONGODB_HOST:localhost}
   port: 27017
   database: booking
   username: root
   password: root
   authentication-database: admin
-  auto-index-creation: true
   uri: mongodb://root:root@127.0.0.1:27017/booking?authSource=admin
   # uri: mongodb://127.0.0.1:27017/booking?authSource=admin
+spring.data.mongodb.auto-index-creation: true
 
 # ----------------------------------------
 # Projections

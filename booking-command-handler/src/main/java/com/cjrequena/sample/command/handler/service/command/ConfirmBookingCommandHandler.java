@@ -9,7 +9,7 @@ import com.cjrequena.sample.es.core.domain.exception.OptimisticConcurrencyExcept
 import com.cjrequena.sample.es.core.domain.model.aggregate.Aggregate;
 import com.cjrequena.sample.es.core.domain.model.command.Command;
 import com.cjrequena.sample.es.core.service.EventStoreService;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import jakarta.annotation.Nonnull;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +55,7 @@ public class ConfirmBookingCommandHandler extends CommandHandler<ConfirmBookingC
       aggregate.markUnconfirmedEventsAsConfirmed();
     } catch (OptimisticConcurrencyException ex) {
       throw new com.cjrequena.sample.command.handler.domain.exception.OptimisticConcurrencyException(ex.getMessage(), ex);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException(e);
     }
 

@@ -2,8 +2,9 @@ package com.cjrequena.sample.command.handler;
 
 import com.cjrequena.sample.command.handler.domain.mapper.EventMapper;
 import com.cjrequena.sample.command.handler.shared.common.util.ApplicationContextProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.mockito.MockedStatic;
@@ -26,8 +27,9 @@ public abstract class TestBase {
     // Only set up if not already initialized
     if (objectMapper == null) {
       // Create real ObjectMapper for JSON operations
-      objectMapper = new ObjectMapper();
-      objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+      objectMapper = JsonMapper.builder()
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+        .build();
 
       // Mock ApplicationContext
       mockApplicationContext = Mockito.mock(ApplicationContext.class);

@@ -1,6 +1,5 @@
 package com.cjrequena.sample.command.handler.controller.exception;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +9,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.databind.DatabindException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,35 +28,49 @@ import static com.cjrequena.sample.command.handler.shared.common.Constant.ISO_LO
 @Slf4j
 public class GlobalExceptionHandler {
 
+  /**
+   * A downstream dependency timed out or returned a 5xx. This is transient and retryable, not a bug
+   * in this service, so surface a 503 rather than a generic 500.
+   */
+  @ExceptionHandler({ResourceAccessException.class, HttpServerErrorException.class})
+  @ResponseBody
+  public ResponseEntity<ErrorDTO> handleDownstreamUnavailable(RestClientException ex) {
+    log.warn("Downstream dependency unavailable/slow: {}", ex.getMessage());
+    return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE,
+      "A downstream service is temporarily unavailable; please retry.");
+  }
+
   @ExceptionHandler({ControllerException.class})
   @ResponseBody
   public ResponseEntity<ErrorDTO> handleControllerException(ControllerException ex) {
-    log.info("Exception: {}", ex.getMessage());
+    log.warn("Exception: {}", ex.getMessage());
     return buildErrorResponse(ex.getHttpStatus(), ex.getMessage());
   }
 
   @ExceptionHandler({ControllerRuntimeException.class})
   @ResponseBody
   public ResponseEntity<ErrorDTO> handleControllerRuntimeException(ControllerRuntimeException ex) {
-    log.info("Exception: {}", ex.getMessage());
+    log.warn("Exception: {}", ex.getMessage());
     return buildErrorResponse(ex.getHttpStatus(), ex.getMessage());
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
   @ResponseBody
   public ResponseEntity<ErrorDTO> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-    log.info("Exception: {}", ex.getMessage());
+    log.warn("Exception: {}", ex.getMessage());
 
     Throwable cause = ex.getCause();
     String message;
 
-    if (cause instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException invalidFormatEx) {
+    if (cause instanceof tools.jackson.databind.exc.InvalidFormatException invalidFormatEx) {
       Class<?> targetType = invalidFormatEx.getTargetType();
 
       // Handle invalid Date/Time format
       if (targetType != null && java.time.temporal.Temporal.class.isAssignableFrom(targetType)) {
-        String field = invalidFormatEx.getPath().stream()
-          .map(JsonMappingException.Reference::getFieldName)
+        String field = invalidFormatEx
+          .getPath()
+          .stream()
+          .map(DatabindException.Reference::getPropertyName)
           .filter(Objects::nonNull)
           .reduce((a, b) -> a + "." + b)
           .orElse("unknown");
@@ -65,14 +83,17 @@ public class GlobalExceptionHandler {
 
       // Handle invalid Enum values
       if (targetType != null && targetType.isEnum()) {
-        String field = invalidFormatEx.getPath().stream()
-          .map(JsonMappingException.Reference::getFieldName)
+        String field = invalidFormatEx
+          .getPath()
+          .stream()
+          .map(DatabindException.Reference::getPropertyName)
           .filter(Objects::nonNull)
           .reduce((a, b) -> a + "." + b)
           .orElse("unknown");
 
         String invalidValue = String.valueOf(invalidFormatEx.getValue());
-        String acceptedValues = Arrays.stream(targetType.getEnumConstants())
+        String acceptedValues = Arrays
+          .stream(targetType.getEnumConstants())
           .map(Object::toString)
           .collect(Collectors.joining(", "));
 
@@ -90,7 +111,9 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   @ResponseBody
   public ResponseEntity<ErrorDTO> handleValidationException(MethodArgumentNotValidException ex) {
-    log.error("Validation error: {}", ex.getMessage());
+    // Field names only: the exception message carries the rejected values (emails, phones).
+    log.warn("Validation error [fields={}]", ex.getBindingResult().getFieldErrors().stream()
+      .map(FieldError::getField).distinct().collect(Collectors.joining(", ")));
     List<ValidationError> validationErrors = ex.getBindingResult()
       .getFieldErrors()
       .stream()
@@ -101,28 +124,46 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorDTO> handleIllegalArgumentException(IllegalArgumentException ex) {
-    log.error("Illegal argument: {}", ex.getMessage());
+    log.warn("Illegal argument: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
   }
 
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<ErrorDTO> handleIllegalStateException(IllegalStateException ex) {
-    log.error("Illegal state: {}", ex.getMessage());
+    log.warn("Illegal state: {}", ex.getMessage());
     return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorDTO> handleNoResourceFoundException(NoResourceFoundException ex) {
+    log.warn("No handler found for request: {}", ex.getResourcePath());
+    return buildErrorResponse(HttpStatus.NOT_FOUND, "No endpoint found for the requested path");
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorDTO> handleGenericException(Exception ex) {
+    Throwable cause = ex.getCause();
+    if (cause instanceof IllegalStateException) {
+      log.warn("Illegal state: {}", cause.getMessage());
+      return buildErrorResponse(HttpStatus.CONFLICT, cause.getMessage());
+    }
+    if (cause instanceof IllegalArgumentException) {
+      log.warn("Illegal argument: {}", cause.getMessage());
+      return buildErrorResponse(HttpStatus.BAD_REQUEST, cause.getMessage());
+    }
     log.error("Unexpected error occurred", ex);
     return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
-
   }
 
   private ResponseEntity<ErrorDTO> buildErrorResponse(HttpStatus status, String message) {
+    return buildErrorResponse(status, status.getReasonPhrase(), message);
+  }
+
+  private ResponseEntity<ErrorDTO> buildErrorResponse(HttpStatus status, String errorCode, String message) {
     ErrorDTO error = ErrorDTO.builder()
       .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
       .status(status.value())
-      .errorCode(status.getReasonPhrase())
+      .errorCode(errorCode)
       .message(message)
       .build();
     return ResponseEntity.status(status).body(error);

@@ -7,10 +7,10 @@ import com.cjrequena.sample.command.handler.persistence.mongodb.entity.ProductEn
 import com.cjrequena.sample.command.handler.shared.common.serializer.OffsetDateTimeDeserializer;
 import com.cjrequena.sample.command.handler.shared.common.serializer.OffsetDateTimeSerializer;
 import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonNaming;
+import tools.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

@@ -1,15 +1,15 @@
 package com.cjrequena.sample.command.handler.shared.common.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 
-public class LocalDateSerializer extends JsonSerializer<LocalDate> {
+public class LocalDateSerializer extends ValueSerializer<LocalDate> {
 
   private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -21,7 +21,7 @@ public class LocalDateSerializer extends JsonSerializer<LocalDate> {
    * @throws IOException
    */
   @Override
-  public void serialize(LocalDate value, JsonGenerator generator, SerializerProvider provider) throws IOException {
+  public void serialize(LocalDate value, JsonGenerator generator, SerializationContext provider) {
     generator.writeString(value.format(FORMATTER));
   }
 }

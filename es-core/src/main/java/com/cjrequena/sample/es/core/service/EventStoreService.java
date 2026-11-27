@@ -13,8 +13,8 @@ import com.cjrequena.sample.es.core.persistence.repository.AggregateRepository;
 import com.cjrequena.sample.es.core.persistence.repository.AggregateSnapshotRepository;
 import com.cjrequena.sample.es.core.persistence.repository.EventRepository;
 import com.cjrequena.sample.es.core.persistence.repository.EventSubscriptionRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -73,9 +73,9 @@ public class EventStoreService {
    *
    * @param aggregate the aggregate to save; must not be {@code null}
    * @throws OptimisticConcurrencyException if the aggregate version has been modified by another transaction
-   * @throws JsonProcessingException if snapshot serialization fails
+   * @throws JacksonException if snapshot serialization fails
    */
-  public void saveAggregate(@NotNull Aggregate aggregate) throws OptimisticConcurrencyException, JsonProcessingException {
+  public void saveAggregate(@NotNull Aggregate aggregate) throws OptimisticConcurrencyException, JacksonException {
     String aggregateType = aggregate.getAggregateType();
     UUID aggregateId = aggregate.getAggregateId();
 
@@ -123,9 +123,9 @@ public class EventStoreService {
    * </p>
    *
    * @param aggregate the aggregate to snapshot
-   * @throws JsonProcessingException if serialization fails
+   * @throws JacksonException if serialization fails
    */
-  private void createSnapshotIfNeeded(Aggregate aggregate) throws JsonProcessingException {
+  private void createSnapshotIfNeeded(Aggregate aggregate) throws JacksonException {
     String aggregateType = aggregate.getAggregateType();
     EventStoreConfigurationProperties.SnapshotProperties snapshotProperties = eventStoreConfigurationProperties.getSnapshot(aggregateType);
     
@@ -349,7 +349,7 @@ public class EventStoreService {
       final T aggregate = objectMapper.readValue(json, aggregateClass);
       aggregate.setReproducedAggregateVersion(aggregate.getAggregateVersion());
       return aggregate;
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new RuntimeException("Failed to deserialize aggregate snapshot", e);
     }
   }

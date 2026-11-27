@@ -21,9 +21,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -77,20 +76,18 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings/{bookingId}", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<BookingEntity>> retrieveById(@PathVariable("bookingId") UUID bookingId) {
+  public ResponseEntity<BookingEntity> retrieveById(@PathVariable("bookingId") UUID bookingId) throws NotFoundException {
     log.debug("Retrieving booking by ID: {}", bookingId);
-    
-    return bookingProjectionService
-      .retrieveById(bookingId)
-      .map(booking -> ResponseEntity
+    try {
+      BookingEntity booking = bookingProjectionService.retrieveById(bookingId);
+      return ResponseEntity
         .ok()
         .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePrivate())
-        .body(booking))
-      .onErrorMap(BookingNotFoundException.class, ex -> {
-        log.warn("Booking not found: {}", bookingId);
-        return new NotFoundException(ex.getMessage());
-      })
-      .doOnError(ex -> log.error("Error retrieving booking {}: {}", bookingId, ex.getMessage()));
+        .body(booking);
+    } catch (BookingNotFoundException ex) {
+      log.warn("Booking not found: {}", bookingId);
+      throw new NotFoundException(ex.getMessage());
+    }
   }
 
 
@@ -122,18 +119,13 @@ public class BookingQueryController {
     }
   )
   @GetMapping(path = "/bookings", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<Flux<BookingEntity>>> retrieve() {
+  public ResponseEntity<List<BookingEntity>> retrieve() {
     log.debug("Retrieving all bookings");
-    
-    Flux<BookingEntity> bookings = bookingProjectionService
-      .retrieve()
-      .doOnComplete(() -> log.debug("Successfully retrieved all bookings"))
-      .doOnError(ex -> log.error("Error retrieving bookings: {}", ex.getMessage()));
-    
-    return Mono.just(ResponseEntity
+    List<BookingEntity> bookings = bookingProjectionService.retrieve();
+    return ResponseEntity
       .ok()
       .cacheControl(CacheControl.noCache())
-      .body(bookings));
+      .body(bookings);
   }
 
 }

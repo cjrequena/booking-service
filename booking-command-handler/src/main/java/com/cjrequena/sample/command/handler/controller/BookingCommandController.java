@@ -30,7 +30,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
@@ -75,7 +74,7 @@ public class BookingCommandController {
     }
   )
   @PostMapping(path = "/create", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> create(@Valid @RequestBody CreateBookingCommandDTO dto) {
+  public ResponseEntity<CommandResponseDTO> create(@Valid @RequestBody CreateBookingCommandDTO dto) {
     log.info("Creating new booking");
     Command command = commandMapper.toCommand(dto);
     return handleCommand(command, HttpStatus.CREATED);
@@ -114,7 +113,7 @@ public class BookingCommandController {
     }
   )
   @PostMapping(path = "/{bookingId}/confirm", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> confirm(
+  public ResponseEntity<CommandResponseDTO> confirm(
     @PathVariable("bookingId") UUID bookingId
   ) {
     log.info("Confirming booking: {}", bookingId);
@@ -156,7 +155,7 @@ public class BookingCommandController {
     }
   )
   @PostMapping(path = "/{bookingId}/cancel", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> cancel(
+  public ResponseEntity<CommandResponseDTO> cancel(
     @PathVariable("bookingId") UUID bookingId
   ) {
     log.info("Cancelling booking: {}", bookingId);
@@ -198,7 +197,7 @@ public class BookingCommandController {
     }
   )
   @PostMapping(path = "/{bookingId}/complete", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> complete(
+  public ResponseEntity<CommandResponseDTO> complete(
     @PathVariable("bookingId") UUID bookingId
   ) {
     log.info("Completing booking: {}", bookingId);
@@ -240,7 +239,7 @@ public class BookingCommandController {
     }
   )
   @PostMapping(path = "/{bookingId}/expire", produces = {APPLICATION_JSON_VALUE})
-  public Mono<ResponseEntity<CommandResponseDTO>> expire(
+  public ResponseEntity<CommandResponseDTO> expire(
     @PathVariable("bookingId") UUID bookingId
   ) {
     log.info("Expiring booking: {}", bookingId);
@@ -255,9 +254,9 @@ public class BookingCommandController {
    *
    * @param command       the domain command
    * @param successStatus the HTTP status to return on success
-   * @return Mono containing the response entity
+   * @return the response entity
    */
-  private Mono<ResponseEntity<CommandResponseDTO>> handleCommand(Command command, HttpStatus successStatus) {
+  private ResponseEntity<CommandResponseDTO> handleCommand(Command command, HttpStatus successStatus) {
     try {
       Booking booking = (Booking) commandBusService.handle(command);
 
@@ -269,13 +268,11 @@ public class BookingCommandController {
 
       log.info("Command executed successfully - Booking ID: {}, Status: {}", booking.getBookingId(), booking.getStatus());
 
-      return Mono.just(
-        ResponseEntity
-          .status(successStatus)
-          .cacheControl(CacheControl.noStore().mustRevalidate())
-          .header("Booking-Id", command.getAggregateId().toString())
-          .body(responseDTO)
-      );
+      return ResponseEntity
+        .status(successStatus)
+        .cacheControl(CacheControl.noStore().mustRevalidate())
+        .header("Booking-Id", command.getAggregateId().toString())
+        .body(responseDTO);
 
     } catch (OptimisticConcurrencyException ex) {
       log.warn("Optimistic concurrency conflict: {}", ex.getMessage());

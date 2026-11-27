@@ -62,7 +62,7 @@ class BookingCommandHandlerIT {
     registry.add("spring.datasource.eventstore.password", postgres::getPassword);
 
     // MongoDB
-    registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
+    registry.add("spring.mongodb.uri", mongo::getReplicaSetUrl);
 
     // Kafka
     registry.add(

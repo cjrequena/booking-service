@@ -12,9 +12,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -75,7 +75,7 @@ public class Booking extends Aggregate {
   //==========================================================
   // Crate Booking
   //==========================================================
-  public void applyCommand(CreateBookingCommand command) throws JsonProcessingException {
+  public void applyCommand(CreateBookingCommand command) throws JacksonException {
     // Map all products to PENDING status
     List<ProductVO> pendingProducts = command
       .getProducts()
@@ -121,7 +121,7 @@ public class Booking extends Aggregate {
   // Confirm Booking
   //==========================================================
 
-  public void applyCommand(ConfirmBookingCommand command) throws JsonProcessingException {
+  public void applyCommand(ConfirmBookingCommand command) throws JacksonException {
     final BookingConfirmedEventDataVO data = BookingConfirmedEventDataVO
       .builder()
       .bookingId(command.getAggregateId())
@@ -150,7 +150,7 @@ public class Booking extends Aggregate {
   // Cancel Booking
   //==========================================================
 
-  public void applyCommand(CancelBookingCommand command) throws JsonProcessingException {
+  public void applyCommand(CancelBookingCommand command) throws JacksonException {
     final BookingCancelledEventDataVO data = BookingCancelledEventDataVO
       .builder()
       .bookingId(command.getAggregateId())
@@ -179,7 +179,7 @@ public class Booking extends Aggregate {
   // Complete Booking
   //==========================================================
 
-  public void applyCommand(CompleteBookingCommand command) throws JsonProcessingException {
+  public void applyCommand(CompleteBookingCommand command) throws JacksonException {
     final BookingCompletedEventDataVO data = BookingCompletedEventDataVO
       .builder()
       .bookingId(command.getAggregateId())
@@ -208,7 +208,7 @@ public class Booking extends Aggregate {
   // Expire Booking
   //==========================================================
 
-  public void applyCommand(ExpireBookingCommand command) throws JsonProcessingException {
+  public void applyCommand(ExpireBookingCommand command) throws JacksonException {
     final BookingExpiredEventDataVO data = BookingExpiredEventDataVO
       .builder()
       .bookingId(command.getAggregateId())
